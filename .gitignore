@@ -1,0 +1,22 @@
+# 忽略虚拟环境
+.venv/
+
+# 忽略 Python 缓存
+__pycache__/
+*.pyc
+
+# 忽略 IDE 配置
+.vscode/
+.idea/
+
+# 忽略日志
+*.log
+
+# 忽略敏感配置文件
+.env.prod
+
+# 忽略sqlite数据库
+*.db
+
+# 忽略前端的包
+node_modules/
