@@ -60,15 +60,26 @@
 
         <!-- 输入区域 -->
         <div class="input-area">
-          <a-input-search
-            v-model:value="inputMessage"
-            placeholder="请输入消息..."
-            enter-button="发送"
-            @search="sendMessage"
-            size="large"
-            :loading="isSending"
-            class="input-search"
-          />
+          <div class="input-wrapper">
+            <a-textarea
+              v-model:value="inputMessage"
+              placeholder="请输入消息..."
+              :rows="3"
+              :auto-size="{ minRows: 1, maxRows: 6 }"
+              @keydown.enter.prevent="handleKeydown"
+              class="input-textarea"
+            />
+            <a-button 
+              type="primary" 
+              size="large" 
+              :loading="isSending" 
+              @click="sendMessage"
+              class="send-button"
+            >
+              发送
+            </a-button>
+          </div>
+          <div class="input-hint">按 Enter 发送，Shift+Enter 换行</div>
         </div>
       </div>
 
@@ -158,6 +169,23 @@ function scrollToBottom() {
   const container = messagesHistory.value;
   if (container) {
     container.scrollTop = container.scrollHeight;
+  }
+}
+
+function handleKeydown(e) {
+  if (e.shiftKey) {
+    // Shift+Enter 换行
+    const textarea = e.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    inputMessage.value = inputMessage.value.substring(0, start) + '\n' + inputMessage.value.substring(end);
+    // 重新设置光标位置
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + 1;
+    }, 0);
+  } else {
+    // Enter 发送消息
+    sendMessage();
   }
 }
 
@@ -483,8 +511,27 @@ function handleLogout() {
   background-color: white;
 }
 
-.input-search {
-  width: 100%;
+.input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.input-textarea {
+  flex: 1;
+  resize: none;
+}
+
+.send-button {
+  height: 100%;
+  min-height: 30px;
+}
+
+.input-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
 }
 
 /* 底部样式 */
@@ -577,6 +624,14 @@ function handleLogout() {
 
   .input-area {
     padding: 16px 20px;
+  }
+
+  .input-wrapper {
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
   }
 }
 </style>
