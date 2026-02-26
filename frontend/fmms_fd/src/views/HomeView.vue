@@ -189,8 +189,8 @@ function handleKeydown(e) {
   }
 }
 
-async function sendMessage(inputValue) {
-  const content = inputValue ? inputValue.trim() : inputMessage.value.trim();
+async function sendMessage() {
+  const content = inputMessage.value.trim();
   if (!content || isSending.value) return;
 
   messages.value.push({ sender: '我', text: content });
