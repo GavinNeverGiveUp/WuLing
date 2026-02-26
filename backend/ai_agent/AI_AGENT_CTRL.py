@@ -11,6 +11,7 @@ from fastmcp import Client
  
 class AIClient(object):
     ai_agent_pool = {}
+    _cached_tools = None
 
     def __init__(self, mcp_client, jwt):
 
@@ -32,8 +33,6 @@ class AIClient(object):
         # 系统消息
         self.system_message = "你是拥有SQLite记忆，会调用方法，管理物资的小助手"
 
-        # 初始化mcp服务
-        self.tools = None
         self.jwt = jwt
     
     def _save_message(self, user_id, role, content, tool_calls=None, tool_call_id=None, tool_name=None):
@@ -122,9 +121,11 @@ class AIClient(object):
         # 1. 保存并获取历史
         self._save_message(user_id, "user", user_input)
 
-        # 2. 获取 MCP 工具
-        mcp_tools = await self.mcp_client.list_tools()
-        openai_tools = self._convert_tools(mcp_tools)
+        # 2. 获取 MCP 工具（使用类缓存）
+        if AIClient._cached_tools is None:
+            mcp_tools = await self.mcp_client.list_tools()
+            AIClient._cached_tools = self._convert_tools(mcp_tools)
+        openai_tools = AIClient._cached_tools
 
         while True:
             messages = self._get_history(user_id)
@@ -167,6 +168,105 @@ class AIClient(object):
             else:
                 return response_msg.content
             
+    async def chat_stream(self, user_id, user_input):
+        # 1. 保存并获取历史
+        self._save_message(user_id, "user", user_input)
+
+        # 2. 获取 MCP 工具（使用类缓存）
+        if AIClient._cached_tools is None:
+            mcp_tools = await self.mcp_client.list_tools()
+            AIClient._cached_tools = self._convert_tools(mcp_tools)
+        openai_tools = AIClient._cached_tools
+
+        while True:
+            messages = self._get_history(user_id)
+
+            # 使用流式调用，同时收集完整的回复信息
+            response = self.llm.chat.completions.create(
+                model=self.llm_model,
+                messages=messages,
+                tool_choice="auto",
+                tools=openai_tools,
+                stream=True
+            )
+            
+            # 收集完整的回复
+            full_response = ""
+            tool_calls = []
+            chunks = []
+            
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_response += content
+                    chunks.append(content)
+                # 检查是否有工具调用
+                if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
+                    tool_calls.extend(chunk.choices[0].delta.tool_calls)
+            
+            # 确保 tool_calls 是一个列表
+            if not isinstance(tool_calls, list):
+                tool_calls = []
+            
+            # 如果没有工具调用，将 tool_calls 设置为 None
+            if not tool_calls:
+                tool_calls = None
+            
+            # 保存 AI 的原始回复（即使包含 tool_calls）
+            self._save_message(
+                user_id=user_id,
+                role="assistant",
+                content=full_response,
+                tool_calls=tool_calls
+            )
+
+            if tool_calls:
+                # 有工具调用，执行工具调用
+                valid_tool_calls = []
+                for tool_call in tool_calls:
+                    # 验证工具调用的有效性
+                    if hasattr(tool_call, 'function') and tool_call.function:
+                        func_name = getattr(tool_call.function, 'name', None)
+                        if func_name:
+                            # 安全解析工具调用参数
+                            try:
+                                if hasattr(tool_call.function, 'arguments') and tool_call.function.arguments:
+                                    func_args = json.loads(tool_call.function.arguments)
+                                else:
+                                    func_args = {}
+                            except json.JSONDecodeError:
+                                func_args = {}
+                            
+                            # 验证 tool_call.id 的存在
+                            tool_call_id = getattr(tool_call, 'id', None)
+                            if tool_call_id:
+                                try:
+                                    result = await self.mcp_client.call_tool(func_name, arguments=func_args)
+                                    tool_result_text = result.content[0].text
+                                    
+                                    # 保存工具执行结果
+                                    self._save_message(
+                                        user_id=user_id,
+                                        role="tool",
+                                        content=tool_result_text,
+                                        tool_call_id=tool_call_id,
+                                        tool_name=func_name
+                                    )
+                                    valid_tool_calls.append(tool_call)
+                                except Exception as e:
+                                    # 记录工具调用错误，但继续执行
+                                    print(f"Tool call error: {e}")
+                                    continue
+                # 继续循环，让 AI 基于工具结果生成最终回复
+                continue
+            else:
+                # 没有工具调用，流式返回收集的内容
+                for chunk in chunks:
+                    yield chunk
+                
+                # 退出循环
+                return
+
 def gen_mcp_conf(user_jwt):
     conf = deepcopy(MCP_CONF).get("mcpServers", None)
 

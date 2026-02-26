@@ -12,6 +12,7 @@ from fmms.item_mgr import item_app
 from ai_agent.agent import ai_app
 
 app = FastAPI(title="家庭物品管理系统",
+              root_path="/api",
               redirect_slashes=False # 禁用自动重定向
               )
 
