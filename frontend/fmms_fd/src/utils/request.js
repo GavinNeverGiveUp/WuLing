@@ -4,8 +4,10 @@ import store from '@/store'
 import router from '@/router'
 import { message } from 'ant-design-vue'; // 导入 antdv 的 message 组件
 
+import env from '../env_prod'
+
 const service = axios.create({
-  baseURL: 'http://127.0.0.1:8000/', // 设置API的基础URL
+  baseURL: env.BASE_URL, // 设置API的基础URL
   timeout: 1000 * 60 * 5
 });
 
