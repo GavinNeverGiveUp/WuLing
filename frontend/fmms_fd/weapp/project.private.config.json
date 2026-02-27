@@ -1,0 +1,14 @@
+{
+  "libVersion": "3.14.2",
+  "projectname": "AI%E5%B0%8F%E7%AE%A1%E5%AE%B6",
+  "setting": {
+    "urlCheck": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "compileHotReLoad": true
+  }
+}
