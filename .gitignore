@@ -14,6 +14,7 @@ __pycache__/
 
 # 忽略敏感配置文件
 .env.prod
+env_prod.js
 
 # 忽略sqlite数据库
 *.db
