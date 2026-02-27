@@ -1,4 +1,6 @@
-const BASE_URL = 'http://127.0.0.1:8000'
+// 引入环境变量
+const env = require('../env_prod')
+const BASE_URL = env.BASE_URL
 
 function request(options) {
   return new Promise((resolve, reject) => {
