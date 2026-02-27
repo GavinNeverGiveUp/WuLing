@@ -1,0 +1,68 @@
+<view class="home-container">
+  <view class="navbar">
+    <view class="navbar-left">
+      <view class="menu-btn" bindtap="goToProfile">
+        <text class="menu-line"></text>
+        <text class="menu-line"></text>
+        <text class="menu-line"></text>
+      </view>
+    </view>
+    <view class="navbar-center">
+      <text class="navbar-title">AI小管家</text>
+    </view>
+    <view class="navbar-right"></view>
+  </view>
+
+  <scroll-view 
+    class="chat-container" 
+    scroll-y 
+    scroll-into-view="{{scrollIntoView}}"
+    scroll-with-animation
+  >
+    <view class="messages-list">
+      <block wx:for="{{messages}}" wx:key="index">
+        <view 
+          class="message-item {{item.role === 'user' ? 'message-right' : 'message-left'}}"
+          id="msg-{{index}}"
+        >
+          <view class="message-avatar message-avatar-{{item.role}}">
+            {{item.role === 'user' ? firstChar : 'AI'}}
+          </view>
+          <view class="message-content-wrapper">
+            <text class="message-sender">{{item.role === 'user' ? '我' : 'AI助手'}}</text>
+            <view class="message-content message-{{item.role}}">
+              <rich-text nodes="{{item.richText}}"></rich-text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view class="typing-indicator" wx:if="{{sending}}" id="msg-typing">
+        <view class="typing-avatar">
+          AI
+        </view>
+        <view class="typing-content">
+          <view class="typing-dots">
+            <text class="typing-dot"></text>
+            <text class="typing-dot"></text>
+            <text class="typing-dot"></text>
+          </view>
+        </view>
+      </view>
+      <view id="msg-bottom"></view>
+    </view>
+  </scroll-view>
+
+  <view class="input-container">
+    <textarea 
+      class="chat-input" 
+      placeholder="输入消息..."
+      value="{{inputText}}"
+      bindinput="onInputChange"
+      auto-height
+      maxlength="500"
+    ></textarea>
+    <view class="send-btn {{sending ? 'send-btn-disabled' : ''}}" bindtap="handleSend">
+      <text class="send-icon">{{sending ? '...' : '➤'}}</text>
+    </view>
+  </view>
+</view>
