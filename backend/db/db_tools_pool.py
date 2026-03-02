@@ -29,13 +29,14 @@ if os.getenv('DB_CONFIG'):
     except json.JSONDecodeError:
         print("警告: DB_CONFIG环境变量格式错误，使用默认配置")
 
-@asynccontextmanager
-async def get_db():
-    """获取数据库连接的异步上下文管理器（单连接模式）"""
-    conn = None
-    try:
-        # 创建新的数据库连接
-        conn = await aiomysql.connect(
+# 连接池
+_pool: Optional[aiomysql.Pool] = None
+
+async def init_db_pool():
+    """初始化数据库连接池"""
+    global _pool
+    if _pool is None:
+        _pool = await aiomysql.create_pool(
             host=DB_CONFIG['host'],
             port=DB_CONFIG['port'],
             user=DB_CONFIG['user'],
@@ -43,13 +44,22 @@ async def get_db():
             db=DB_CONFIG['db'],
             charset=DB_CONFIG['charset'],
             cursorclass=DB_CONFIG['cursorclass'],
+            minsize=1,
+            maxsize=10,
             autocommit=False
         )
-        yield conn
-    except Exception as e:
-        if conn:
+    return _pool
+
+@asynccontextmanager
+async def get_db():
+    """获取数据库连接的异步上下文管理器"""
+    global _pool
+    if _pool is None:
+        await init_db_pool()
+    
+    async with _pool.acquire() as conn:
+        try:
+            yield conn
+        except Exception:
             await conn.rollback()
-        raise
-    finally:
-        if conn:
-            await conn.close()
+            raise
