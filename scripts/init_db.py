@@ -21,7 +21,9 @@ def create_tables():
             email TEXT UNIQUE NOT NULL,
             phone TEXT NOT NULL,
             password_hash TEXT NOT NULL,
-            create_time TEXT NOT NULL
+            create_time TEXT NOT NULL,
+            default_family_id TEXT,
+            FOREIGN KEY (default_family_id) REFERENCES families(id)
         )
     ''')
     
@@ -44,6 +46,20 @@ def create_tables():
         )
     ''')
     
+    # 家庭邀请表
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS family_invitations (
+            id TEXT PRIMARY KEY,
+            family_id TEXT,
+            inviter_id TEXT,
+            invitee_username TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT,
+            FOREIGN KEY (family_id) REFERENCES families(id),
+            FOREIGN KEY (inviter_id) REFERENCES users(id)
+        )
+    ''')
+    
     # 物品表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
@@ -54,6 +70,7 @@ def create_tables():
             family_id TEXT,
             added_by TEXT,
             created_at TEXT,
+            expiration_date TEXT,
             FOREIGN KEY (family_id) REFERENCES families(id),
             FOREIGN KEY (added_by) REFERENCES users(id)
         )

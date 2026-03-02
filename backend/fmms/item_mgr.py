@@ -19,12 +19,35 @@ def create_item(item: ItemCreate, current_user: str = Depends(get_current_user))
     if not user_id:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    # 获取用户的默认家庭
-    families = get_user_families(user_id)
-    if not families:
-        raise HTTPException(status_code=400, detail="用户没有家庭")
-    
-    family_id = families[0]["id"]  # 使用第一个家庭
+    # 确定家庭ID
+    family_id = item.family_id
+    if not family_id:
+        # 使用默认家庭
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT default_family_id FROM users WHERE id=?",
+                (user_id,)
+            )
+            default_family = cursor.fetchone()
+            if not default_family or not default_family[0]:
+                # 如果没有默认家庭，使用第一个家庭
+                families = get_user_families(user_id)
+                if not families:
+                    raise HTTPException(status_code=400, detail="用户没有家庭")
+                family_id = families[0]["id"]
+            else:
+                family_id = default_family[0]
+    else:
+        # 验证用户是否是指定家庭的成员
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=? AND family_id=?",
+                (user_id, family_id)
+            )
+            if not cursor.fetchone():
+                raise HTTPException(status_code=403, detail="您不是该家庭的成员")
     
     item_id = str(uuid4())
     created_at = datetime.now().isoformat()
@@ -32,8 +55,8 @@ def create_item(item: ItemCreate, current_user: str = Depends(get_current_user))
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO items (id, name, description, location, family_id, added_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (item_id, item.name, item.description, item.location, family_id, user_id, created_at)
+            "INSERT INTO items (id, name, description, location, family_id, added_by, created_at, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, item.name, item.description, item.location, family_id, user_id, created_at, item.expiration_date)
         )
         conn.commit()
     
@@ -44,7 +67,8 @@ def create_item(item: ItemCreate, current_user: str = Depends(get_current_user))
         "location": item.location,
         "family_id": family_id,
         "added_by": user_id,
-        "created_at": created_at
+        "created_at": created_at,
+        "expiration_date": item.expiration_date
     }
 
 @item_app.get("/items", response_model=List[ItemResponse])
@@ -62,7 +86,7 @@ def get_items(current_user: str = Depends(get_current_user)):
     
     with get_db() as conn:
         cursor = conn.cursor()
-        query = f"SELECT id, name, description, location, family_id, added_by, created_at FROM items WHERE family_id IN ({placeholders})"
+        query = f"SELECT id, name, description, location, family_id, added_by, created_at, expiration_date FROM items WHERE family_id IN ({placeholders})"
         cursor.execute(query, family_ids)
         rows = cursor.fetchall()
     
@@ -74,7 +98,8 @@ def get_items(current_user: str = Depends(get_current_user)):
             "location": row[3],
             "family_id": row[4],
             "added_by": row[5],
-            "created_at": row[6]
+            "created_at": row[6],
+            "expiration_date": row[7]
         }
         for row in rows
     ]
@@ -110,13 +135,16 @@ def update_item(item_id: str, item_update: ItemUpdate, current_user: str = Depen
         if item_update.location is not None:
             update_fields.append("location = ?")
             update_values.append(item_update.location)
+        if item_update.expiration_date is not None:
+            update_fields.append("expiration_date = ?")
+            update_values.append(item_update.expiration_date)
         
         if update_fields:
             update_query = f"UPDATE items SET {', '.join(update_fields)} WHERE id = ?"
             cursor.execute(update_query, update_values + [item_id])
         
         # 获取更新后的数据
-        cursor.execute("SELECT id, name, description, location, family_id, added_by, created_at FROM items WHERE id=?", (item_id,))
+        cursor.execute("SELECT id, name, description, location, family_id, added_by, created_at, expiration_date FROM items WHERE id=?", (item_id,))
         row = cursor.fetchone()
     
     if not row:
@@ -129,7 +157,8 @@ def update_item(item_id: str, item_update: ItemUpdate, current_user: str = Depen
         "location": row[3],
         "family_id": row[4],
         "added_by": row[5],
-        "created_at": row[6]
+        "created_at": row[6],
+        "expiration_date": row[7]
     }
 
 @item_app.delete("/items/{item_id}")
