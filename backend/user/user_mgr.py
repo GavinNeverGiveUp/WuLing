@@ -162,7 +162,7 @@ async def get_pending_invitations(current_user: str = Depends(get_current_user))
             "inviter_id": row['inviter_id'],
             "invitee_username": row['invitee_username'],
             "status": row['status'],
-            "created_at": row['created_at']
+            "created_at": str(row['created_at'])
         }
         for row in rows
     ]

@@ -13,7 +13,7 @@ ai_app = APIRouter(prefix="/ai", tags=["AI Agent调用"])
 async def chat(ChatRequest: ChatRequest, request: Request, current_user: str = Depends(get_current_user)):
 
     # 获取用户ID
-    user_id = get_user_id_by_username(current_user)
+    user_id = await get_user_id_by_username(current_user)
     if not user_id:
         raise HTTPException(status_code=404, detail="用户不存在")
     
@@ -38,9 +38,9 @@ async def chat(ChatRequest: ChatRequest, request: Request, current_user: str = D
 @ai_app.get("/messages", response_model=List[MessageResponse])
 async def get_user_history_message(limit: int = 20, current_user: str = Depends(get_current_user)):
 
-    user_id = get_user_id_by_username(current_user)
+    user_id = await get_user_id_by_username(current_user)
     if not user_id:
         raise HTTPException(status_code=404, detail="用户不存在")
-
-    messages = get_user_history_messages(user_id, limit)
+    
+    messages = await get_user_history_messages(user_id, limit)
     return messages
