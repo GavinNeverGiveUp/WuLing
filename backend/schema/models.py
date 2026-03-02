@@ -37,11 +37,14 @@ class ItemCreate(BaseModel):
     name: str
     description: Optional[str] = None
     location: str
+    family_id: Optional[str] = None
+    expiration_date: Optional[str] = None
 
 class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     location: Optional[str] = None
+    expiration_date: Optional[str] = None
 
 class ItemResponse(BaseModel):
     id: str
@@ -51,9 +54,26 @@ class ItemResponse(BaseModel):
     family_id: str
     added_by: str
     created_at: str
+    expiration_date: Optional[str] = None
 
 class ChatRequest(BaseModel):
     message: Optional[str]
 
 class ChatResponse(BaseModel):
     message: Optional[str]
+
+class FamilyInvitationCreate(BaseModel):
+    family_id: str
+    invitee_username: str
+
+class FamilyInvitationResponse(BaseModel):
+    id: str
+    family_id: str
+    inviter_id: str
+    invitee_username: str
+    status: str
+    created_at: str
+
+class FamilyInvitationAction(BaseModel):
+    invitation_id: str
+    action: str  # 'accept' or 'reject'

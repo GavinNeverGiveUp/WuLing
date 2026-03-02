@@ -182,10 +182,11 @@ Page({
   },
 
   scrollToBottom() {
-    const len = this.data.messages.length
-    this.setData({
-      scrollIntoView: `msg-${len}`
-    })
+    setTimeout(() => {
+      this.setData({
+        scrollIntoView: 'msg-bottom'
+      })
+    }, 100)
   },
 
   goToProfile() {
