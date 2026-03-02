@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from auth.auth_handler import create_access_token, get_current_user
 from db.db_tools import get_db
-from schema.models import FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction
+from schema.models import FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction, RemoveMemberRequest
 from utils.func_utils import get_password_hash, get_user_by_username, get_user_families, get_user_id_by_username, verify_password
 
 
@@ -242,3 +242,132 @@ async def set_default_family(family_id: str, current_user: str = Depends(get_cur
             await conn.commit()
     
     return {"message": "默认家庭设置成功"}
+
+
+@user_app.get("/families/members")
+async def get_family_members(family_id: str = None, current_user: str = Depends(get_current_user)):
+    """查询家庭中的成员列表
+    
+    Args:
+        family_id: 家庭ID，如果不提供则使用默认家庭
+        current_user: 当前登录用户
+    """
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 确定要查询的家庭ID
+    target_family_id = family_id
+    if not target_family_id:
+        # 使用默认家庭
+        async with get_db() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT default_family_id FROM users WHERE id=%s",
+                    (user_id,)
+                )
+                result = await cursor.fetchone()
+                if not result or not result['default_family_id']:
+                    raise HTTPException(status_code=400, detail="用户没有默认家庭")
+                target_family_id = result['default_family_id']
+    
+    # 验证用户是否是该家庭的成员
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (user_id, target_family_id)
+            )
+            if not await cursor.fetchone():
+                raise HTTPException(status_code=403, detail="您不是该家庭的成员")
+            
+            # 查询家庭成员
+            await cursor.execute(
+                """
+                SELECT u.id, u.username, u.email, u.phone, uf.role 
+                FROM users u 
+                JOIN user_families uf ON u.id = uf.user_id 
+                WHERE uf.family_id = %s
+                """,
+                (target_family_id,)
+            )
+            members = await cursor.fetchall()
+    
+    # 转换为响应格式
+    return [
+        {
+            "id": member['id'],
+            "username": member['username'],
+            "email": member['email'],
+            "phone": member['phone'],
+            "role": member['role']
+        }
+        for member in members
+    ]
+
+
+@user_app.delete("/families/members")
+async def remove_family_member(remove_request: RemoveMemberRequest, current_user: str = Depends(get_current_user)):
+    """删除家庭成员
+    
+    要求：
+    1. 当前用户必须是家庭的所有者
+    2. 不能删除所有者自己
+    3. 只能删除其他成员
+    
+    Args:
+        remove_request: 删除请求，包含family_id和member_id
+        current_user: 当前登录用户
+    """
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 确定要操作的家庭ID
+    target_family_id = remove_request.family_id
+    if not target_family_id:
+        # 使用默认家庭
+        async with get_db() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT default_family_id FROM users WHERE id=%s",
+                    (user_id,)
+                )
+                result = await cursor.fetchone()
+                if not result or not result['default_family_id']:
+                    raise HTTPException(status_code=400, detail="用户没有默认家庭")
+                target_family_id = result['default_family_id']
+    
+    # 验证当前用户是否是家庭的所有者
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            # 检查当前用户的角色
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (user_id, target_family_id)
+            )
+            user_role = await cursor.fetchone()
+            if not user_role or user_role['role'] != 'owner':
+                raise HTTPException(status_code=403, detail="只有家庭所有者才能删除成员")
+            
+            # 检查要删除的成员是否存在且是该家庭的成员
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (remove_request.member_id, target_family_id)
+            )
+            member_role = await cursor.fetchone()
+            if not member_role:
+                raise HTTPException(status_code=404, detail="该用户不是该家庭的成员")
+            
+            # 不能删除所有者自己
+            if remove_request.member_id == user_id:
+                raise HTTPException(status_code=400, detail="不能删除家庭所有者自己")
+            
+            # 执行删除操作
+            await cursor.execute(
+                "DELETE FROM user_families WHERE user_id=%s AND family_id=%s",
+                (remove_request.member_id, target_family_id)
+            )
+            await conn.commit()
+    
+    return {"message": "成员删除成功"}

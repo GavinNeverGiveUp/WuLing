@@ -77,3 +77,7 @@ class FamilyInvitationResponse(BaseModel):
 class FamilyInvitationAction(BaseModel):
     invitation_id: str
     action: str  # 'accept' or 'reject'
+
+class RemoveMemberRequest(BaseModel):
+    family_id: Optional[str] = None
+    member_id: str
