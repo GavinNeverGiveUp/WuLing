@@ -98,8 +98,8 @@ async def get_items(current_user: str = Depends(get_current_user)):
             "location": row['location'],
             "family_id": row['family_id'],
             "added_by": row['added_by'],
-            "created_at": row['created_at'],
-            "expiration_date": row['expiration_date']
+            "created_at": row['created_at'].isoformat() if row['created_at'] else None,
+            "expiration_date": row['expiration_date'].isoformat() if row['expiration_date'] else None
         }
         for row in rows
     ]
@@ -157,8 +157,8 @@ async def update_item(item_id: str, item_update: ItemUpdate, current_user: str =
         "location": row['location'],
         "family_id": row['family_id'],
         "added_by": row['added_by'],
-        "created_at": row['created_at'],
-        "expiration_date": row['expiration_date']
+        "created_at": row['created_at'].isoformat() if row['created_at'] else None,
+        "expiration_date": row['expiration_date'].isoformat() if row['expiration_date'] else None
     }
 
 @item_app.delete("/items/{item_id}")

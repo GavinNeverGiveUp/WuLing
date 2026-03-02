@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -53,7 +54,7 @@ class ItemResponse(BaseModel):
     location: str
     family_id: str
     added_by: str
-    created_at: str
+    created_at: Optional[datetime] = None
     expiration_date: Optional[str] = None
 
 class ChatRequest(BaseModel):
