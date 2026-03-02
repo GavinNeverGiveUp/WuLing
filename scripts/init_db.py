@@ -1,96 +1,135 @@
+import json
 import os
-import sqlite3
+import mysql.connector
+from dotenv import load_dotenv
+from pathlib import Path
 
-def get_db_path():
-    """获取数据库文件的绝对路径"""
-    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    db_path = os.path.join(current_dir, 'family_items.db')
-    return os.path.abspath(db_path)
+# 加载环境变量
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env.prod")
+
+# MySQL数据库配置
+DB_CONFIG = {
+    'host': 'localhost',
+    'port': 3306,
+    'user': 'root',
+    'password': 'your_password',
+    'db': 'family_items',
+    'charset': 'utf8mb4',
+}
+
+# 尝试从环境变量读取JSON格式的配置
+if os.getenv('DB_CONFIG'):
+    try:
+        db_config_json = os.getenv('DB_CONFIG')
+        # 移除可能的引号
+        if db_config_json.startswith('"') and db_config_json.endswith('"'):
+            db_config_json = db_config_json[1:-1]
+        # 解析JSON
+        config_dict = json.loads(db_config_json)
+        # 更新配置
+        DB_CONFIG.update(config_dict)
+    except json.JSONDecodeError:
+        print("警告: DB_CONFIG环境变量格式错误，使用默认配置")
+
+# 获取数据库连接信息
+db_host = DB_CONFIG.get('host', 'localhost')
+db_port = int(DB_CONFIG.get('port', '3306'))
+db_user = DB_CONFIG.get('user', 'root')
+db_password = DB_CONFIG.get('password', 'your_password')
+db_name = DB_CONFIG.get('db', 'family_items')
 
 # 创建数据库表
 def create_tables():
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
+    # 连接到MySQL服务器
+    conn = mysql.connector.connect(
+        host=db_host,
+        port=db_port,
+        user=db_user,
+        password=db_password,
+        database=db_name
+    )
     cursor = conn.cursor()
+
+    # 家庭表
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS families (
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''')
     
     # 用户表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            phone TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            create_time TEXT NOT NULL,
-            default_family_id TEXT,
+            id VARCHAR(36) PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            phone VARCHAR(20) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            create_time DATETIME NOT NULL,
+            default_family_id VARCHAR(36),
             FOREIGN KEY (default_family_id) REFERENCES families(id)
-        )
-    ''')
-    
-    # 家庭表
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS families (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL
-        )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
     
     # 用户家庭关联表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_families (
-            user_id TEXT,
-            family_id TEXT,
-            role TEXT DEFAULT 'member',
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (family_id) REFERENCES families(id)
-        )
+            user_id VARCHAR(36),
+            family_id VARCHAR(36),
+            role VARCHAR(20) DEFAULT 'member',
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, family_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
     
     # 家庭邀请表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS family_invitations (
-            id TEXT PRIMARY KEY,
-            family_id TEXT,
-            inviter_id TEXT,
-            invitee_username TEXT,
-            status TEXT DEFAULT 'pending',
-            created_at TEXT,
-            FOREIGN KEY (family_id) REFERENCES families(id),
-            FOREIGN KEY (inviter_id) REFERENCES users(id)
-        )
+            id VARCHAR(36) PRIMARY KEY,
+            family_id VARCHAR(36),
+            inviter_id VARCHAR(36),
+            invitee_username VARCHAR(255),
+            status VARCHAR(20) DEFAULT 'pending',
+            created_at DATETIME,
+            FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
+            FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
     
     # 物品表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
             description TEXT,
-            location TEXT NOT NULL,
-            family_id TEXT,
-            added_by TEXT,
-            created_at TEXT,
-            expiration_date TEXT,
-            FOREIGN KEY (family_id) REFERENCES families(id),
-            FOREIGN KEY (added_by) REFERENCES users(id)
-        )
+            location VARCHAR(255) NOT NULL,
+            family_id VARCHAR(36),
+            added_by VARCHAR(36),
+            created_at DATETIME,
+            expiration_date DATETIME,
+            FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
+            FOREIGN KEY (added_by) REFERENCES users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
 
     # 用户会话历史表
     cursor.execute('''
-       drop table if exists messages;
+       DROP TABLE IF EXISTS messages;
     ''')
     cursor.execute('''
        CREATE TABLE IF NOT EXISTS messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT,
-                    role TEXT,
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id VARCHAR(36),
+                    role VARCHAR(20),
                     content TEXT,
                     tool_calls TEXT,
-                    tool_call_id TEXT,
-                    tool_name TEXT,
+                    tool_call_id VARCHAR(36),
+                    tool_name VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
     
     conn.commit()
