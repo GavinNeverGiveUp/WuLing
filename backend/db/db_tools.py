@@ -48,8 +48,14 @@ async def get_db():
         yield conn
     except Exception as e:
         if conn:
-            await conn.rollback()
+            try:
+                await conn.rollback()
+            except:
+                pass
         raise
     finally:
         if conn:
-            await conn.close()
+            try:
+                await conn.close()
+            except:
+                pass
