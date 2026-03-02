@@ -16,28 +16,28 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from db.db_tools import init_db_pool
+# from db.db_tools import init_db_pool
 from user.user_mgr import user_app
 from fmms.item_mgr import item_app
 from ai_agent.agent import ai_app
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """应用生命周期管理"""
-    # 启动时初始化数据库连接池
-    await init_db_pool()
-    print("数据库连接池已初始化")
-    yield
-    # 关闭时可以在这里清理资源
-    print("应用关闭")
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     """应用生命周期管理"""
+#     # 启动时初始化数据库连接池
+#     await init_db_pool()
+#     print("数据库连接池已初始化")
+#     yield
+#     # 关闭时可以在这里清理资源
+#     print("应用关闭")
 
 
 app = FastAPI(
     title="家庭物品管理系统",
     root_path="/api",
     redirect_slashes=False,  # 禁用自动重定向
-    lifespan=lifespan
+    # lifespan=lifespan
 )
 
 # 包含路由器
