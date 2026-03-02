@@ -34,37 +34,37 @@ def verify_password(plain_password: str, stored_hash: str) -> bool:
 # def get_password_hash(password):
 #     return pwd_context.hash(password)
 
-def get_user_by_username(username: str) -> Optional[dict]:
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, username, email, password_hash, phone FROM users WHERE username = ?", (username,))
-        row = cursor.fetchone()
-        if row:
-            return {"id": row[0], "username": row[1], "email": row[2], "password_hash": row[3], "phone": row[4]}
+async def get_user_by_username(username: str) -> Optional[dict]:
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT id, username, email, password_hash, phone FROM users WHERE username = %s", (username,))
+            row = await cursor.fetchone()
+            if row:
+                return {"id": row['id'], "username": row['username'], "email": row['email'], "password_hash": row['password_hash'], "phone": row['phone']}
     return None
 
-def get_user_id_by_username(username: str) -> Optional[str]:
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-        row = cursor.fetchone()
-        return row[0] if row else None
+async def get_user_id_by_username(username: str) -> Optional[str]:
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+            row = await cursor.fetchone()
+            return row['id'] if row else None
     
 
-def get_user_families(user_id: str) -> List[dict]:
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT f.id, f.name 
-            FROM families f 
-            JOIN user_families uf ON f.id = uf.family_id 
-            WHERE uf.user_id = ?
-        """, (user_id,))
-        rows = cursor.fetchall()
-        return [{"id": row[0], "name": row[1]} for row in rows]
+async def get_user_families(user_id: str) -> List[dict]:
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute("""
+                SELECT f.id, f.name 
+                FROM families f 
+                JOIN user_families uf ON f.id = uf.family_id 
+                WHERE uf.user_id = %s
+            """, (user_id,))
+            rows = await cursor.fetchall()
+            return [{"id": row['id'], "name": row['name']} for row in rows]
 
-def get_default_family(user_id: str) -> Optional[str]:
-    families = get_user_families(user_id)
+async def get_default_family(user_id: str) -> Optional[str]:
+    families = await get_user_families(user_id)
     if len(families) == 1:
         return families[0]["id"]
     return None

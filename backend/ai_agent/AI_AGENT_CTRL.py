@@ -31,52 +31,59 @@ class AIClient(object):
         self.description="家庭物资管理小助手部署"
 
         # 系统消息
-        self.system_message = "你是拥有SQLite记忆，会调用方法，管理物资的小助手"
+        self.system_message = "你是拥有MySQL记忆，会调用方法，管理物资的小助手"
 
         self.jwt = jwt
     
-    def _save_message(self, user_id, role, content, tool_calls=None, tool_call_id=None, tool_name=None):
+    async def _save_message(self, user_id, role, content, tool_calls=None, tool_call_id=None, tool_name=None):
         """将单条消息存入数据库"""
-        with get_db() as db:
-            # 如果是 assistant 且带工具调用，把 tool_calls 转成 JSON 字符串存起来
-            t_calls_json = None
-            if tool_calls:
-                # 兼容处理：将 OpenAI 的 ToolCall 对象转为可序列化的字典
-                t_calls_json = json.dumps([tc.model_dump() for tc in tool_calls])
-            db.execute(
-                "INSERT INTO messages (user_id, role, content, tool_calls, tool_call_id, tool_name) VALUES (?, ?, ?, ?, ?, ?)",
-                    (user_id, role, content, t_calls_json, tool_call_id, tool_name)
-            )
-            db.commit()
+        async with get_db() as db:
+            async with db.cursor() as cursor:
+                # 如果是 assistant 且带工具调用，把 tool_calls 转成 JSON 字符串存起来
+                t_calls_json = None
+                if tool_calls:
+                    # 兼容处理：将 OpenAI 的 ToolCall 对象转为可序列化的字典
+                    t_calls_json = json.dumps([tc.model_dump() for tc in tool_calls])
+                await cursor.execute(
+                    "INSERT INTO messages (user_id, role, content, tool_calls, tool_call_id, tool_name) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (user_id, role, content, t_calls_json, tool_call_id, tool_name)
+                )
+                await db.commit()
 
-    def _get_history(self, user_id, limit=50):
+    async def _get_history(self, user_id, limit=50):
         """获取某个用户的历史记录"""
-        with get_db() as db:
-            # 获取最近的 limit 条记录，并按时间正序排列
-            query = f"""
-                SELECT role, content, tool_calls, tool_call_id, tool_name FROM (
-                SELECT * FROM messages WHERE user_id = ? ORDER BY created_at DESC LIMIT ?
-                ) ORDER BY created_at ASC
-            """
-            cursor = db.cursor()
-            cursor.execute(query, (user_id, limit))
-            rows = cursor.fetchall()
-                
-            history = [{"role": "system", "content": f"{self.system_message}"}]
-            for role, content, t_calls, t_id, t_name in rows:
-                msg = {"role": role, "content": content or ""}
-                
-                # 关键修复：恢复 tool_calls
-                if t_calls:
-                    msg["tool_calls"] = json.loads(t_calls)
-                
-                # 关键修复：恢复 tool 消息必需的元数据
-                if role == "tool":
-                    msg["tool_call_id"] = t_id
-                    msg["name"] = t_name
-                
-                history.append(msg)
-            return history
+        async with get_db() as db:
+            async with db.cursor() as cursor:
+                # 获取最近的 limit 条记录，并按时间正序排列
+                query = """
+                    SELECT role, content, tool_calls, tool_call_id, tool_name FROM (
+                    SELECT * FROM messages WHERE user_id = %s ORDER BY created_at DESC LIMIT %s
+                    ) AS sub ORDER BY created_at ASC
+                """
+                await cursor.execute(query, (user_id, limit))
+                rows = await cursor.fetchall()
+                    
+                history = [{"role": "system", "content": f"{self.system_message}"}]
+                for row in rows:
+                    role = row['role']
+                    content = row['content']
+                    t_calls = row['tool_calls']
+                    t_id = row['tool_call_id']
+                    t_name = row['tool_name']
+                    
+                    msg = {"role": role, "content": content or ""}
+                    
+                    # 关键修复：恢复 tool_calls
+                    if t_calls:
+                        msg["tool_calls"] = json.loads(t_calls)
+                    
+                    # 关键修复：恢复 tool 消息必需的元数据
+                    if role == "tool":
+                        msg["tool_call_id"] = t_id
+                        msg["name"] = t_name
+                    
+                    history.append(msg)
+                return history
         
     def _convert_tools(self, mcp_tools):
         """将 MCP 工具格式转换为 OpenAI 兼容格式"""
@@ -119,7 +126,7 @@ class AIClient(object):
             
     async def chat(self, user_id, user_input):
         # 1. 保存并获取历史
-        self._save_message(user_id, "user", user_input)
+        await self._save_message(user_id, "user", user_input)
 
         # 2. 获取 MCP 工具（使用类缓存）
         if AIClient._cached_tools is None:
@@ -128,7 +135,7 @@ class AIClient(object):
         openai_tools = AIClient._cached_tools
 
         while True:
-            messages = self._get_history(user_id)
+            messages = await self._get_history(user_id)
 
             response = self.llm.chat.completions.create(
                 model=self.llm_model,
@@ -141,7 +148,7 @@ class AIClient(object):
             
             # 关键：保存 AI 的原始回复（即使包含 tool_calls）
             # 注意：OpenAI SDK 对象需要转成字符串或提取内容保存
-            self._save_message(
+            await self._save_message(
                 user_id=user_id,
                 role="assistant",
                 content=response_msg.content,
@@ -157,7 +164,7 @@ class AIClient(object):
                     tool_result_text = result.content[0].text
                     
                     # 保存工具执行结果
-                    self._save_message(
+                    await self._save_message(
                         user_id=user_id,
                         role="tool",
                         content=tool_result_text,
@@ -170,7 +177,7 @@ class AIClient(object):
             
     async def chat_stream(self, user_id, user_input):
         # 1. 保存并获取历史
-        self._save_message(user_id, "user", user_input)
+        await self._save_message(user_id, "user", user_input)
 
         # 2. 获取 MCP 工具（使用类缓存）
         if AIClient._cached_tools is None:
@@ -179,7 +186,7 @@ class AIClient(object):
         openai_tools = AIClient._cached_tools
 
         while True:
-            messages = self._get_history(user_id)
+            messages = await self._get_history(user_id)
 
             # 使用流式调用，同时收集完整的回复信息
             response = self.llm.chat.completions.create(
@@ -213,7 +220,7 @@ class AIClient(object):
                 tool_calls = None
             
             # 保存 AI 的原始回复（即使包含 tool_calls）
-            self._save_message(
+            await self._save_message(
                 user_id=user_id,
                 role="assistant",
                 content=full_response,
@@ -245,7 +252,7 @@ class AIClient(object):
                                     tool_result_text = result.content[0].text
                                     
                                     # 保存工具执行结果
-                                    self._save_message(
+                                    await self._save_message(
                                         user_id=user_id,
                                         role="tool",
                                         content=tool_result_text,
@@ -281,17 +288,17 @@ def gen_mcp_conf(user_jwt):
         "mcpServers": conf
     }
 
-def get_user_history_messages(user_id: str, limit=20) -> Optional[str]:
+async def get_user_history_messages(user_id: str, limit=20) -> Optional[str]:
     """
         查询最近limit条数量的历史对话消息
     """
-    with get_db() as conn:
-        cursor = conn.cursor()
-        query = f"""
-            SELECT role, content FROM (
-                SELECT * FROM messages WHERE user_id = ? AND role in ("user", "assistant") AND tool_calls IS NULL ORDER BY created_at DESC LIMIT ?
-            )ORDER BY created_at ASC
-        """
-        cursor.execute(query, (user_id, limit))
-        rows = cursor.fetchall()
-        return [{"role": row[0], "content": row[1]} for row in rows]
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            query = """
+                SELECT role, content FROM (
+                    SELECT * FROM messages WHERE user_id = %s AND role in ('user', 'assistant') AND tool_calls IS NULL ORDER BY created_at DESC LIMIT %s
+                ) AS sub ORDER BY created_at ASC
+            """
+            await cursor.execute(query, (user_id, limit))
+            rows = await cursor.fetchall()
+            return [{"role": row['role'], "content": row['content']} for row in rows]
