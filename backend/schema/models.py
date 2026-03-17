@@ -82,3 +82,8 @@ class FamilyInvitationAction(BaseModel):
 class RemoveMemberRequest(BaseModel):
     family_id: Optional[str] = None
     member_id: str
+
+class UpdateMemberRoleRequest(BaseModel):
+    family_id: Optional[str] = None
+    member_id: str
+    role: str  # 'owner' or 'member'

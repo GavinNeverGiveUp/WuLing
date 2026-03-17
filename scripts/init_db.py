@@ -51,15 +51,14 @@ def create_tables():
     )
     cursor = conn.cursor()
 
-    # 家庭表
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS families (
-            id VARCHAR(36) PRIMARY KEY,
-            name VARCHAR(255) NOT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+       SET FOREIGN_KEY_CHECKS = 0;
     ''')
-    
+
     # 用户表
+    cursor.execute('''
+       DROP TABLE IF EXISTS users;
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(36) PRIMARY KEY,
@@ -69,11 +68,26 @@ def create_tables():
             password_hash VARCHAR(255) NOT NULL,
             create_time DATETIME NOT NULL,
             default_family_id VARCHAR(36),
-            FOREIGN KEY (default_family_id) REFERENCES families(id)
+            FOREIGN KEY (default_family_id) REFERENCES families(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''')
+
+    # 家庭表
+    cursor.execute('''
+       DROP TABLE IF EXISTS families;
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS families (
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
     
+    
     # 用户家庭关联表
+    cursor.execute('''
+       DROP TABLE IF EXISTS user_families;
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_families (
             user_id VARCHAR(36),
@@ -86,6 +100,9 @@ def create_tables():
     ''')
     
     # 家庭邀请表
+    cursor.execute('''
+       DROP TABLE IF EXISTS family_invitations;
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS family_invitations (
             id VARCHAR(36) PRIMARY KEY,
@@ -100,6 +117,9 @@ def create_tables():
     ''')
     
     # 物品表
+    cursor.execute('''
+       DROP TABLE IF EXISTS items;
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
             id VARCHAR(36) PRIMARY KEY,
@@ -130,6 +150,10 @@ def create_tables():
                     tool_name VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''')
+
+    cursor.execute('''
+       SET FOREIGN_KEY_CHECKS = 1;
     ''')
     
     conn.commit()

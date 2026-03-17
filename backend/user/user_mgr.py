@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from auth.auth_handler import create_access_token, get_current_user
 from db.db_tools import get_db
-from schema.models import FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction, RemoveMemberRequest
+from schema.models import FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction, RemoveMemberRequest, UpdateMemberRoleRequest
 from utils.func_utils import get_password_hash, get_user_by_username, get_user_families, get_user_id_by_username, verify_password
 
 
@@ -368,6 +368,114 @@ async def remove_family_member(remove_request: RemoveMemberRequest, current_user
                 "DELETE FROM user_families WHERE user_id=%s AND family_id=%s",
                 (remove_request.member_id, target_family_id)
             )
+            
+            # 检查被删除成员的默认家庭
+            await cursor.execute(
+                "SELECT default_family_id FROM users WHERE id=%s",
+                (remove_request.member_id,)
+            )
+            user_default_family = await cursor.fetchone()
+            
+            if user_default_family and user_default_family['default_family_id'] == target_family_id:
+                # 默认家庭是当前被删除的家庭，需要更新默认家庭
+                # 检查用户是否还有其他家庭
+                await cursor.execute(
+                    "SELECT family_id FROM user_families WHERE user_id=%s",
+                    (remove_request.member_id,)
+                )
+                remaining_families = await cursor.fetchall()
+                
+                if remaining_families:
+                    # 有其他家庭，随机选取一个作为新的默认家庭
+                    new_default_family = remaining_families[0]['family_id']
+                    await cursor.execute(
+                        "UPDATE users SET default_family_id=%s WHERE id=%s",
+                        (new_default_family, remove_request.member_id)
+                    )
+                else:
+                    # 没有其他家庭，将默认家庭置为NULL
+                    await cursor.execute(
+                        "UPDATE users SET default_family_id=NULL WHERE id=%s",
+                        (remove_request.member_id,)
+                    )
+            
             await conn.commit()
     
     return {"message": "成员删除成功"}
+
+
+@user_app.put("/families/members/role")
+async def update_member_role(update_request: UpdateMemberRoleRequest, current_user: str = Depends(get_current_user)):
+    """修改家庭成员角色
+    
+    要求：
+    1. 当前用户必须是家庭的所有者
+    2. 可以将成员角色设置为 'owner' 或 'member'
+    3. 如果设置为 'owner'，确保家庭至少有一个所有者
+    
+    Args:
+        update_request: 修改角色请求，包含family_id、member_id和role
+        current_user: 当前登录用户
+    """
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 验证角色值
+    if update_request.role not in ['owner', 'member']:
+        raise HTTPException(status_code=400, detail="角色必须是 'owner' 或 'member'")
+    
+    # 确定要操作的家庭ID
+    target_family_id = update_request.family_id
+    if not target_family_id:
+        # 使用默认家庭
+        async with get_db() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT default_family_id FROM users WHERE id=%s",
+                    (user_id,)
+                )
+                result = await cursor.fetchone()
+                if not result or not result['default_family_id']:
+                    raise HTTPException(status_code=400, detail="用户没有默认家庭")
+                target_family_id = result['default_family_id']
+    
+    # 验证当前用户是否是家庭的所有者
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            # 检查当前用户的角色
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (user_id, target_family_id)
+            )
+            user_role = await cursor.fetchone()
+            if not user_role or user_role['role'] != 'owner':
+                raise HTTPException(status_code=403, detail="只有家庭所有者才能修改成员角色")
+            
+            # 检查要修改的成员是否存在且是该家庭的成员
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (update_request.member_id, target_family_id)
+            )
+            member_role = await cursor.fetchone()
+            if not member_role:
+                raise HTTPException(status_code=404, detail="该用户不是该家庭的成员")
+            
+            # 如果要将成员角色改为非owner，需要确保家庭至少有一个owner
+            if member_role['role'] == 'owner' and update_request.role == 'member':
+                await cursor.execute(
+                    "SELECT COUNT(*) as count FROM user_families WHERE family_id=%s AND role='owner'",
+                    (target_family_id,)
+                )
+                owner_count = await cursor.fetchone()
+                if owner_count['count'] <= 1:
+                    raise HTTPException(status_code=400, detail="家庭至少需要有一个所有者")
+            
+            # 执行角色更新操作
+            await cursor.execute(
+                "UPDATE user_families SET role=%s WHERE user_id=%s AND family_id=%s",
+                (update_request.role, update_request.member_id, target_family_id)
+            )
+            await conn.commit()
+    
+    return {"message": f"成员角色已更新为 {update_request.role}"}

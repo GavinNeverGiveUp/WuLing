@@ -112,14 +112,31 @@ async def update_item(item_id: str, item_update: ItemUpdate, current_user: str =
     
     async with get_db() as conn:
         async with conn.cursor() as cursor:
-            # 检查物品是否存在且属于当前用户
+            # 检查物品是否存在
             await cursor.execute(
-                "SELECT family_id FROM items WHERE id=%s AND added_by=%s",
-                (item_id, user_id)
+                "SELECT family_id, added_by FROM items WHERE id=%s",
+                (item_id,)
             )
-            result = await cursor.fetchone()
-            if not result:
-                raise HTTPException(status_code=404, detail="物品不存在或无权修改")
+            item_info = await cursor.fetchone()
+            if not item_info:
+                raise HTTPException(status_code=404, detail="物品不存在")
+            
+            family_id = item_info['family_id']
+            added_by = item_info['added_by']
+            
+            # 检查当前用户是否是物品的拥有者
+            if user_id == added_by:
+                # 是拥有者，允许修改
+                pass
+            else:
+                # 不是拥有者，检查是否是家庭owner
+                await cursor.execute(
+                    "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                    (user_id, family_id)
+                )
+                role_info = await cursor.fetchone()
+                if not role_info or role_info['role'] != 'owner':
+                    raise HTTPException(status_code=403, detail="无权修改此物品")
             
             # 更新物品信息
             update_fields = []
@@ -169,9 +186,34 @@ async def delete_item(item_id: str, current_user: str = Depends(get_current_user
     
     async with get_db() as conn:
         async with conn.cursor() as cursor:
-            await cursor.execute("DELETE FROM items WHERE id=%s AND added_by=%s", (item_id, user_id))
-            if cursor.rowcount == 0:
-                raise HTTPException(status_code=404, detail="物品不存在或无权删除")
+            # 检查物品是否存在
+            await cursor.execute(
+                "SELECT family_id, added_by FROM items WHERE id=%s",
+                (item_id,)
+            )
+            item_info = await cursor.fetchone()
+            if not item_info:
+                raise HTTPException(status_code=404, detail="物品不存在")
+            
+            family_id = item_info['family_id']
+            added_by = item_info['added_by']
+            
+            # 检查当前用户是否是物品的拥有者
+            if user_id == added_by:
+                # 是拥有者，允许删除
+                pass
+            else:
+                # 不是拥有者，检查是否是家庭owner
+                await cursor.execute(
+                    "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                    (user_id, family_id)
+                )
+                role_info = await cursor.fetchone()
+                if not role_info or role_info['role'] != 'owner':
+                    raise HTTPException(status_code=403, detail="无权删除此物品")
+            
+            # 执行删除操作
+            await cursor.execute("DELETE FROM items WHERE id=%s", (item_id,))
             await conn.commit()
     
     return {"message": "删除成功"}
