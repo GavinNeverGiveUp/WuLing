@@ -160,8 +160,11 @@ class AIClient(object):
                     func_name = tool_call.function.name
                     func_args = json.loads(tool_call.function.arguments)
                     
-                    result = await self.mcp_client.call_tool(func_name, arguments=func_args)
-                    tool_result_text = result.content[0].text
+                    try:
+                        result = await self.mcp_client.call_tool(func_name, arguments=func_args)
+                        tool_result_text = result.content[0].text
+                    except Exception as e:
+                        tool_result_text = e.__str__()
                     
                     # 保存工具执行结果
                     await self._save_message(
