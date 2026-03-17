@@ -2,7 +2,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f1f5f9;
+  background-color: #fff;
 }
 
 .navbar {
@@ -129,52 +129,76 @@
 }
 
 .message-assistant {
-  background-color: #f0f9ff;
-  color: #0369a1;
+  background-color: #fff;
+  color: #000;
+  border: 1rpx solid #e2e8f0;
 }
 
 .input-container {
   display: flex;
   align-items: center;
-  padding: 24rpx 32rpx;
+  padding: 20rpx 24rpx 32rpx;
+  background-color: transparent;
+  gap: 12rpx;
+  position: relative;
+  z-index: 10;
+}
+
+.input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
   background-color: #fff;
-  border-top: 1rpx solid #e2e8f0;
-  gap: 20rpx;
+  border-radius: 32rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+  border: 1rpx solid #e2e8f0;
 }
 
 .chat-input {
   flex: 1;
-  background-color: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 32rpx;
-  padding: 20rpx 28rpx;
+  background-color: transparent;
+  border: none;
   font-size: 28rpx;
   min-height: 48rpx;
   max-height: 200rpx;
   line-height: 1.5;
+  outline: none;
+  color: #000;
+}
+
+.chat-input::placeholder {
+  color: #94a3b8;
 }
 
 .send-btn {
-  width: 80rpx;
-  height: 80rpx;
-  background-color: #0ea5e9;
+  width: 72rpx;
+  height: 72rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
 }
 
 .send-btn:active {
-  background-color: #0284c7;
+  background: linear-gradient(135deg, #5a6fd8 0%, #684293 100%);
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.3);
 }
 
 .send-btn-disabled {
   background-color: #94a3b8;
+  box-shadow: none;
 }
 
 .send-btn-disabled:active {
   background-color: #94a3b8;
+  transform: none;
 }
 
 .send-icon {
@@ -204,11 +228,12 @@
 }
 
 .typing-content {
-  background-color: #f0f9ff;
+  background-color: #fff;
   padding: 24rpx 32rpx;
   border-radius: 16rpx;
   display: flex;
   align-items: center;
+  border: 1rpx solid #e2e8f0;
 }
 
 .typing-dots {
@@ -219,7 +244,7 @@
 .typing-dot {
   width: 16rpx;
   height: 16rpx;
-  background-color: #0369a1;
+  background-color: #64748b;
   border-radius: 50%;
   animation: typing-bounce 1.4s infinite ease-in-out both;
 }

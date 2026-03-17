@@ -29,7 +29,7 @@
             {{item.role === 'user' ? firstChar : 'AI'}}
           </view>
           <view class="message-content-wrapper">
-            <text class="message-sender">{{item.role === 'user' ? '我' : 'AI助手'}}</text>
+            <text class="message-sender">{{item.role === 'user' ? '我' : 'AI小管家'}}</text>
             <view class="message-content message-{{item.role}}">
               <rich-text nodes="{{item.richText}}"></rich-text>
             </view>
@@ -38,7 +38,7 @@
       </block>
       <view class="typing-indicator" wx:if="{{sending}}" id="msg-typing">
         <view class="typing-avatar">
-          AI
+          小
         </view>
         <view class="typing-content">
           <view class="typing-dots">
@@ -53,14 +53,16 @@
   </scroll-view>
 
   <view class="input-container">
-    <textarea 
-      class="chat-input" 
-      placeholder="输入消息..."
-      value="{{inputText}}"
-      bindinput="onInputChange"
-      auto-height
-      maxlength="500"
-    ></textarea>
+    <view class="input-wrapper">
+      <textarea 
+        class="chat-input" 
+        placeholder="发消息..."
+        value="{{inputText}}"
+        bindinput="onInputChange"
+        auto-height
+        maxlength="500"
+      ></textarea>
+    </view>
     <view class="send-btn {{sending ? 'send-btn-disabled' : ''}}" bindtap="handleSend">
       <text class="send-icon">{{sending ? '...' : '➤'}}</text>
     </view>
