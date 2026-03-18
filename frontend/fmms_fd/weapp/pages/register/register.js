@@ -4,7 +4,6 @@ Page({
   data: {
     username: '',
     email: '',
-    phone: '',
     password: '',
     loading: false
   },
@@ -21,12 +20,6 @@ Page({
     })
   },
 
-  onPhoneInput(e) {
-    this.setData({
-      phone: e.detail.value
-    })
-  },
-
   onPasswordInput(e) {
     this.setData({
       password: e.detail.value
@@ -34,9 +27,9 @@ Page({
   },
 
   async handleRegister() {
-    const { username, email, phone, password } = this.data
+    const { username, email, password } = this.data
     
-    if (!username || !email || !phone || !password) {
+    if (!username || !email || !password) {
       wx.showToast({
         title: '请填写完整信息',
         icon: 'none'
@@ -53,15 +46,6 @@ Page({
       return
     }
 
-    const phoneRegex = /^1[3-9]\d{9}$/
-    if (!phoneRegex.test(phone)) {
-      wx.showToast({
-        title: '请输入正确的手机号',
-        icon: 'none'
-      })
-      return
-    }
-
     this.setData({ loading: true })
 
     try {
@@ -71,7 +55,7 @@ Page({
         data: {
           username,
           email,
-          phone,
+          phone: '12312341234',
           password
         }
       })

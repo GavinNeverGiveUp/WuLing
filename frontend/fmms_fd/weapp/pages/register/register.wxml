@@ -25,15 +25,7 @@
       />
     </view>
 
-    <view class="form-item">
-      <view class="form-item-label">手机号</view>
-      <input 
-        class="form-item-input" 
-        placeholder="请输入手机号"
-        value="{{phone}}"
-        bindinput="onPhoneInput"
-      />
-    </view>
+
 
     <view class="form-item">
       <view class="form-item-label">密码</view>
