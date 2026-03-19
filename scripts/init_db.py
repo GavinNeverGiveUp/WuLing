@@ -152,6 +152,28 @@ def create_tables():
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''')
 
+    # api-key
+    cursor.execute('''
+        DROP TABLE IF EXISTS `api_keys`;
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS api_keys (
+        id VARCHAR (64) PRIMARY KEY,
+        user_id VARCHAR (64) NOT NULL,
+        NAME VARCHAR (100) NOT NULL,
+        key_prefix VARCHAR (80) NOT NULL UNIQUE,
+        key_hash VARCHAR (64) NOT NULL,
+        salt VARCHAR (32) NOT NULL,
+        STATUS VARCHAR (16) NOT NULL DEFAULT 'active',
+        created_at DATETIME NOT NULL,
+        last_used_at DATETIME NULL,
+        last_used_ip VARCHAR (64) NULL,
+        revoked_at DATETIME NULL,
+        INDEX idx_api_keys_user_id (user_id),
+        INDEX idx_api_keys_status (STATUS)
+        ) ENGINE = INNODB 
+    ''')
+
     cursor.execute('''
        SET FOREIGN_KEY_CHECKS = 1;
     ''')

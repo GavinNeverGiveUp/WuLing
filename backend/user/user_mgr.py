@@ -1,4 +1,4 @@
-# 用户和家庭管理子应用
+﻿# 用户和家庭管理子应用
 from datetime import datetime, timedelta
 from typing import List
 from uuid import uuid4
@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from auth.auth_handler import create_access_token, get_current_user
 from db.db_tools import get_db
-from schema.models import FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction, RemoveMemberRequest, UpdateMemberRoleRequest
+from schema.models import ApiKeyCreateRequest, ApiKeyCreateResponse, ApiKeyListItem, FamilyCreate, FamilyResponse, MessageResponse, Token, UserCreate, UserLogin, UserResponse, FamilyInvitationCreate, FamilyInvitationResponse, FamilyInvitationAction, RemoveMemberRequest, UpdateMemberRoleRequest
+from user.USER_MGR_CTRL import create_api_key_for_user, list_api_keys_by_user, revoke_api_key_for_user
 from utils.func_utils import get_password_hash, get_user_by_username, get_user_families, get_user_id_by_username, verify_password
 
 
@@ -479,3 +480,36 @@ async def update_member_role(update_request: UpdateMemberRoleRequest, current_us
             await conn.commit()
     
     return {"message": f"成员角色已更新为 {update_request.role}"}
+
+
+@user_app.post("/api-keys", response_model=ApiKeyCreateResponse)
+async def create_user_api_key(payload: ApiKeyCreateRequest, current_user: str = Depends(get_current_user)):
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    key_name = (payload.name or "").strip() or "默认 API Key"
+    created = await create_api_key_for_user(user_id, key_name)
+    return created
+
+
+@user_app.get("/api-keys", response_model=List[ApiKeyListItem])
+async def list_user_api_keys(current_user: str = Depends(get_current_user)):
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    return await list_api_keys_by_user(user_id)
+
+
+@user_app.delete("/api-keys/{key_id}")
+async def revoke_user_api_key(key_id: str, current_user: str = Depends(get_current_user)):
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    revoked = await revoke_api_key_for_user(user_id, key_id)
+    if not revoked:
+        raise HTTPException(status_code=404, detail="API Key 不存在或已被吊销")
+
+    return {"message": "API Key 已吊销"}

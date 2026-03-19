@@ -1,6 +1,7 @@
+﻿from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -9,9 +10,11 @@ class UserCreate(BaseModel):
     phone: str
     password: str
 
+
 class UserLogin(BaseModel):
     username: str
     password: str
+
 
 class UserResponse(BaseModel):
     id: str
@@ -19,20 +22,25 @@ class UserResponse(BaseModel):
     email: str
     phone: str
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class FamilyCreate(BaseModel):
     name: str
+
 
 class FamilyResponse(BaseModel):
     id: str
     name: str
 
+
 class MessageResponse(BaseModel):
     role: str
     content: str
+
 
 class ItemCreate(BaseModel):
     name: str
@@ -41,11 +49,13 @@ class ItemCreate(BaseModel):
     family_id: Optional[str] = None
     expiration_date: Optional[str] = None
 
+
 class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     location: Optional[str] = None
     expiration_date: Optional[str] = None
+
 
 class ItemResponse(BaseModel):
     id: str
@@ -57,15 +67,19 @@ class ItemResponse(BaseModel):
     created_at: Optional[datetime] = None
     expiration_date: Optional[str] = None
 
+
 class ChatRequest(BaseModel):
     message: Optional[str]
+
 
 class ChatResponse(BaseModel):
     message: Optional[str]
 
+
 class FamilyInvitationCreate(BaseModel):
     family_id: str
     invitee_username: str
+
 
 class FamilyInvitationResponse(BaseModel):
     id: str
@@ -75,15 +89,40 @@ class FamilyInvitationResponse(BaseModel):
     status: str
     created_at: str
 
+
 class FamilyInvitationAction(BaseModel):
     invitation_id: str
     action: str  # 'accept' or 'reject'
+
 
 class RemoveMemberRequest(BaseModel):
     family_id: Optional[str] = None
     member_id: str
 
+
 class UpdateMemberRoleRequest(BaseModel):
     family_id: Optional[str] = None
     member_id: str
     role: str  # 'owner' or 'member'
+
+
+class ApiKeyCreateRequest(BaseModel):
+    name: Optional[str] = None
+
+
+class ApiKeyCreateResponse(BaseModel):
+    id: str
+    name: str
+    api_key: str
+    key_prefix: str
+    created_at: str
+
+
+class ApiKeyListItem(BaseModel):
+    id: str
+    name: str
+    key_prefix: str
+    key_preview: str
+    status: str
+    created_at: str
+    last_used_at: Optional[str] = None
