@@ -4,11 +4,11 @@
 
     <div class="auth-shell">
       <section class="auth-story">
-        <span class="story-badge">WELCOME BACK</span>
-        <h1>欢迎回到物灵</h1>
+        <span class="story-badge">AI 驱动的家庭秩序</span>
+        <h1>你的家，<span>物灵</span>都记得</h1>
         <p>
-          你的家庭物资地图、AI 对话记录和临期提醒都已经准备就绪。
-          登录后继续让物灵帮你管理家中的每一件重要物品。
+          “让整理不再是负担，而是生活的诗意。物灵通过全息感知与智能理解，
+          为你建立家中万物的数字映射。”
         </p>
 
         <div class="story-points">
@@ -27,15 +27,17 @@
         <router-link class="home-link" to="/">返回首页</router-link>
 
         <div class="brand-lockup">
-          <div class="brand-mark">WU</div>
-          <div>
-            <strong>物灵</strong>
-            <span>家庭物资管理平台</span>
-          </div>
+          <img
+            class="brand-icon-image"
+            src="https://api.iconify.design/solar/home-smile-bold-duotone.svg?color=%23D4B08C"
+            alt=""
+            aria-hidden="true"
+          >
+          <span class="brand-name">物灵<span class="brand-dot">.</span></span>
         </div>
 
         <div class="auth-copy">
-          <h2>登录系统</h2>
+          <h2>登录物灵</h2>
           <p>连接你的家庭物资视图，继续使用物灵。</p>
         </div>
 
@@ -112,6 +114,7 @@ async function onSubmit() {
 .auth-page {
   position: relative;
   min-height: 100vh;
+  font-family: 'Inter', 'Noto Serif SC', serif;
   display: grid;
   place-items: center;
   padding: 32px 20px;
@@ -169,9 +172,12 @@ async function onSubmit() {
 
 .auth-story h1 {
   margin: 18px 0 14px;
-  font-family: 'Noto Serif SC', 'PingFang SC', serif;
   font-size: clamp(2.2rem, 4vw, 3.5rem);
   line-height: 1.15;
+}
+
+.auth-story h1 span {
+  color: #d4b08c;
 }
 
 .auth-story p {
@@ -216,31 +222,27 @@ async function onSubmit() {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   margin-top: 18px;
 }
 
-.brand-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #d7b08d, #ab7f5b);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.brand-lockup strong,
-.brand-lockup span {
+.brand-icon-image {
+  width: 30px;
+  height: 30px;
   display: block;
+  flex-shrink: 0;
 }
 
-.brand-lockup span {
-  margin-top: 4px;
-  color: #8d7f75;
-  font-size: 0.9rem;
+.brand-name {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.08em;
+  color: #111827;
+}
+
+.brand-dot {
+  color: #d4b08c;
 }
 
 .auth-copy {
@@ -275,6 +277,7 @@ async function onSubmit() {
 
 .auth-form input {
   width: 100%;
+  font-family: inherit;
   padding: 1rem 1.1rem;
   border-radius: 18px;
   border: 1px solid rgba(145, 106, 74, 0.12);
@@ -290,6 +293,7 @@ async function onSubmit() {
 
 .submit-button {
   margin-top: 8px;
+  font-family: inherit;
   border: 0;
   border-radius: 18px;
   padding: 1rem 1.2rem;

@@ -4,21 +4,25 @@
 
     <div class="auth-shell">
       <section class="auth-story">
-        <span class="story-badge">CREATE ACCOUNT</span>
-        <h1>加入物灵</h1>
+        <span class="story-badge">AI 驱动的家庭秩序</span>
+        <h1>你的家，<span>物灵</span>都记得</h1>
         <p>
-          建立你的家庭物资视图，让物灵为你记录位置、补货状态和有效期，
-          从今天开始把“我把它放哪了”变成一个可以随时回答的问题。
+          “让整理不再是负担，而是生活的诗意。物灵通过全息感知与智能理解，
+          为你建立家中万物的数字映射。”
         </p>
 
         <div class="story-points">
+          <article>
+            <strong>AI驱动</strong>
+            <span>像问家人一样问物灵，它会精确告诉你物品在哪间房、哪个柜子</span>
+          </article>
           <article>
             <strong>家庭协作</strong>
             <span>邀请家人一起维护家庭物资状态，共享提醒与位置记录</span>
           </article>
           <article>
             <strong>统一入口</strong>
-            <span>寻物、提醒、盘点和补货都在一个产品界面里完成</span>
+            <span>寻物、提醒、盘点都在一个产品界面里完成</span>
           </article>
         </div>
       </section>
@@ -27,15 +31,17 @@
         <router-link class="home-link" to="/">返回首页</router-link>
 
         <div class="brand-lockup">
-          <div class="brand-mark">WU</div>
-          <div>
-            <strong>物灵</strong>
-            <span>家庭物资管理平台</span>
-          </div>
+          <img
+            class="brand-icon-image"
+            src="https://api.iconify.design/solar/home-smile-bold-duotone.svg?color=%23D4B08C"
+            alt=""
+            aria-hidden="true"
+          >
+          <span class="brand-name">物灵<span class="brand-dot">.</span></span>
         </div>
 
         <div class="auth-copy">
-          <h2>创建账号</h2>
+          <h2>注册物灵</h2>
           <p>注册后即可进入物灵控制台。</p>
         </div>
 
@@ -129,6 +135,7 @@ async function onSubmit() {
 .auth-page {
   position: relative;
   min-height: 100vh;
+  font-family: 'Inter', 'Noto Serif SC', serif;
   display: grid;
   place-items: center;
   padding: 32px 20px;
@@ -170,7 +177,7 @@ async function onSubmit() {
   color: #261c16;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: space-evenly;
 }
 
 .story-badge {
@@ -186,9 +193,12 @@ async function onSubmit() {
 
 .auth-story h1 {
   margin: 18px 0 14px;
-  font-family: 'Noto Serif SC', 'PingFang SC', serif;
   font-size: clamp(2.2rem, 4vw, 3.5rem);
   line-height: 1.15;
+}
+
+.auth-story h1 span {
+  color: #d4b08c;
 }
 
 .auth-story p {
@@ -233,31 +243,27 @@ async function onSubmit() {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   margin-top: 18px;
 }
 
-.brand-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #d7b08d, #ab7f5b);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.brand-lockup strong,
-.brand-lockup span {
+.brand-icon-image {
+  width: 30px;
+  height: 30px;
   display: block;
+  flex-shrink: 0;
 }
 
-.brand-lockup span {
-  margin-top: 4px;
-  color: #8d7f75;
-  font-size: 0.9rem;
+.brand-name {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.08em;
+  color: #111827;
+}
+
+.brand-dot {
+  color: #d4b08c;
 }
 
 .auth-copy {
@@ -295,6 +301,7 @@ async function onSubmit() {
 .auth-form input[type='tel'],
 .auth-form input[type='password'] {
   width: 100%;
+  font-family: inherit;
   padding: 1rem 1.1rem;
   border-radius: 18px;
   border: 1px solid rgba(145, 106, 74, 0.12);
@@ -330,6 +337,7 @@ async function onSubmit() {
 
 .submit-button {
   margin-top: 8px;
+  font-family: inherit;
   border: 0;
   border-radius: 18px;
   padding: 1rem 1.2rem;
