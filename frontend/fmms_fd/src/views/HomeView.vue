@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="dashboard-page">
     <aside class="sidebar">
       <div class="sidebar-top">
@@ -55,14 +55,26 @@
         </div>
 
         <div class="topbar-right">
-          <!-- <div class="expire-box">
-            <span>{{ expiringCount }} 件物品即将过期</span>
-            <small>建议今天处理</small>
+          <div class="expire-box">
+            <span>{{ expiringCount }} 件物品需要关注</span>
+            <small>含已过期及 3 天内到期物品</small>
           </div>
-          <button class="notify-btn" type="button" aria-label="通知">
-            <img class="icon-img" src="https://api.iconify.design/solar/bell-linear.svg?color=%239ca3af" alt="" aria-hidden="true">
-            <span class="dot"></span>
-          </button> -->
+
+          <TopbarNoticePanel
+            title="消息提醒"
+            empty-text="暂无提醒消息"
+            button-label="通知"
+            :show-dot="hasNotifications"
+            :groups="notificationGroups"
+          >
+            <template #item="{ item }">
+              <div class="notice-item-main">
+                <span class="notice-item-name">{{ item.title }}</span>
+                <span v-if="item.tag" class="notice-item-tag" :class="{ danger: item.tagType === 'danger' }">{{ item.tag }}</span>
+              </div>
+              <p v-if="item.meta" class="notice-item-meta">{{ item.meta }}</p>
+            </template>
+          </TopbarNoticePanel>
         </div>
       </header>
 
@@ -142,15 +154,26 @@ import { marked } from 'marked'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import request from '@/utils/request'
+import TopbarNoticePanel from '@/components/TopbarNoticePanel.vue'
 
 marked.setOptions({ breaks: true })
 
 const router = useRouter()
 const store = useStore()
 
+function normalizeExpirationAlerts(payload) {
+  return {
+    expired_within_3_days: Array.isArray(payload?.expired_within_3_days) ? payload.expired_within_3_days : [],
+    expiring_within_3_days: Array.isArray(payload?.expiring_within_3_days) ? payload.expiring_within_3_days : [],
+    total_count: Number.isFinite(payload?.total_count) ? payload.total_count : 0
+  }
+}
+
 const inputMessage = ref('')
 const isSending = ref(false)
 const messagesHistory = ref(null)
+const expirationAlerts = ref(normalizeExpirationAlerts(store.state.expirationAlerts))
+const invitationNotifications = ref([])
 
 let messageIdSeed = 0
 
@@ -186,6 +209,40 @@ const dateLabel = computed(() => {
   return `${dateFormatter.format(now)} · ${weekdayFormatter.format(now)}`
 })
 
+const expiringCount = computed(() => expirationAlerts.value.total_count)
+const invitationCount = computed(() => invitationNotifications.value.length)
+
+const notificationGroups = computed(() => {
+  const expiredItems = expirationAlerts.value.expired_within_3_days.map((item) => ({
+    id: `expired-${item.id}`,
+    title: item.name,
+    tag: formatDaysOffset(item.days_offset, true),
+    tagType: 'danger',
+    meta: `${item.location} · 到期于 ${formatDateTime(item.expiration_date)}`
+  }))
+
+  const expiringItems = expirationAlerts.value.expiring_within_3_days.map((item) => ({
+    id: `expiring-${item.id}`,
+    title: item.name,
+    tag: formatDaysOffset(item.days_offset, false),
+    meta: `${item.location} · 到期于 ${formatDateTime(item.expiration_date)}`
+  }))
+
+  const invitationItems = invitationNotifications.value.map((item, index) => ({
+    id: item.id || `invitation-${index}`,
+    title: item.title || '家庭邀请提醒',
+    meta: item.meta || ''
+  }))
+
+  return [
+    { key: 'expired', title: '已过期（3天内）', items: expiredItems },
+    { key: 'expiring', title: '即将过期（3天内）', items: expiringItems },
+    { key: 'invitation', title: '家庭邀请', items: invitationItems }
+  ]
+})
+
+const hasNotifications = computed(() => (expiringCount.value + invitationCount.value) > 0)
+
 watch(
   () => messages.value.length,
   () => {
@@ -195,17 +252,24 @@ watch(
   }
 )
 
+watch(
+  () => store.state.expirationAlerts,
+  (nextAlerts) => {
+    expirationAlerts.value = normalizeExpirationAlerts(nextAlerts)
+  },
+  { deep: true }
+)
 
 onMounted(() => {
   if (store.state.token) {
     loadCurrentUser()
     loadHistoryMessages()
+    loadExpirationAlerts()
     return
   }
 
   scrollToBottom()
 })
-
 
 async function loadCurrentUser() {
   try {
@@ -235,6 +299,20 @@ async function loadHistoryMessages() {
   } catch (error) {
     console.error('Failed to load history messages:', error)
     messages.value = [...defaultMessages]
+  }
+}
+
+async function loadExpirationAlerts() {
+  try {
+    const response = await request.get('/item/items/expiration-alerts')
+    const normalized = normalizeExpirationAlerts(response)
+    expirationAlerts.value = normalized
+    store.commit('SET_EXPIRATION_ALERTS', normalized)
+  } catch (error) {
+    console.error('Failed to load expiration alerts:', error)
+    const fallback = normalizeExpirationAlerts(null)
+    expirationAlerts.value = fallback
+    store.commit('SET_EXPIRATION_ALERTS', fallback)
   }
 }
 
@@ -274,6 +352,39 @@ function scrollToMessageStart(messageId) {
 function renderMessage(text) {
   return marked.parse(text || '')
 }
+
+function formatDateTime(value) {
+  if (!value) {
+    return '-'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+function formatDaysOffset(daysOffset, isExpired) {
+  const days = Math.abs(Number(daysOffset) || 0)
+
+  if (isExpired) {
+    return `已过期 ${days} 天`
+  }
+
+  if (days === 0) {
+    return '今天到期'
+  }
+
+  return `${days} 天后到期`
+}
+
 
 function handleKeydown(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -535,6 +646,9 @@ function goToSettings() {
 }
 
 .topbar {
+  position: relative;
+  z-index: 25;
+  overflow: visible;
   height: 80px;
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(4px);
@@ -570,6 +684,7 @@ function goToSettings() {
 .topbar-right {
   min-width: 140px;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
 }
 
@@ -591,29 +706,44 @@ function goToSettings() {
   font-size: 10px;
 }
 
-.notify-btn {
-  position: relative;
-  border: 0;
-  background: transparent;
-  padding: 8px;
-  cursor: pointer;
+.notice-item-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
+.notice-item-name {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notice-item-tag {
+  color: #8f6746;
+  background: rgba(212, 176, 140, 0.16);
   border-radius: 999px;
-  background: #f87171;
-  border: 2px solid #ffffff;
+  padding: 2px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.notice-item-tag.danger {
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.16);
+}
+
+.notice-item-meta {
+  margin: 6px 0 0;
+  color: #9ca3af;
+  font-size: 11px;
 }
 
 .chat-section {
   flex: 1;
   min-height: 0;
   position: relative;
+  z-index: 1;
 }
 
 .chat-scroll {
@@ -990,12 +1120,3 @@ function goToSettings() {
   }
 }
 </style>
-
-
-
-
-
-
-
-
-

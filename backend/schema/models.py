@@ -1,5 +1,5 @@
-﻿from datetime import datetime
-from typing import Optional
+from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -66,6 +66,22 @@ class ItemResponse(BaseModel):
     added_by: str
     created_at: Optional[datetime] = None
     expiration_date: Optional[str] = None
+
+
+class ExpirationAlertItem(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    location: str
+    family_id: str
+    expiration_date: Optional[str] = None
+    days_offset: int
+
+
+class ExpirationAlertsResponse(BaseModel):
+    expired_within_3_days: List[ExpirationAlertItem]
+    expiring_within_3_days: List[ExpirationAlertItem]
+    total_count: int
 
 
 class ChatRequest(BaseModel):
