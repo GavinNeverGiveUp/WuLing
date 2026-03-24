@@ -81,6 +81,14 @@ const formState = reactive({
   password: ''
 })
 
+function normalizeExpirationAlerts(payload) {
+  return {
+    expired_within_3_days: Array.isArray(payload?.expired_within_3_days) ? payload.expired_within_3_days : [],
+    expiring_within_3_days: Array.isArray(payload?.expiring_within_3_days) ? payload.expiring_within_3_days : [],
+    total_count: Number.isFinite(payload?.total_count) ? payload.total_count : 0
+  }
+}
+
 async function onSubmit() {
   if (!formState.username.trim() || !formState.password.trim()) {
     message.warning('请输入用户名和密码')
@@ -99,6 +107,14 @@ async function onSubmit() {
 
     const userInfoResponse = await request.get('/user/me')
     store.commit('SET_USER_INFO', userInfoResponse)
+
+    try {
+      const alertsResponse = await request.get('/item/items/expiration-alerts')
+      store.commit('SET_EXPIRATION_ALERTS', normalizeExpirationAlerts(alertsResponse))
+    } catch (alertsError) {
+      console.error('Failed to prefetch expiration alerts:', alertsError)
+      store.commit('SET_EXPIRATION_ALERTS', normalizeExpirationAlerts(null))
+    }
 
     router.push('/home')
     message.success('登录成功')

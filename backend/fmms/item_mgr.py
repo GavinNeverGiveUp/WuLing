@@ -1,13 +1,13 @@
-from datetime import datetime
-from fastapi import APIRouter, FastAPI
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List
 from uuid import uuid4
-from fastapi import Depends, FastAPI, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from auth.auth_handler import get_current_user
 from db.db_tools import get_db
-from schema.models import FamilyCreate, FamilyResponse, ItemCreate, ItemResponse, ItemUpdate, UserCreate, UserLogin, UserResponse
-from utils.func_utils import get_default_family, get_password_hash, get_user_by_username, get_user_families, get_user_id_by_username, verify_password
+from schema.models import ExpirationAlertsResponse, ItemCreate, ItemResponse, ItemUpdate
+from utils.func_utils import get_user_families, get_user_id_by_username
 
 item_app = APIRouter(prefix="/item", tags=["物品管理"])
 
@@ -103,6 +103,70 @@ async def get_items(current_user: str = Depends(get_current_user)):
         }
         for row in rows
     ]
+
+@item_app.get("/items/expiration-alerts", response_model=ExpirationAlertsResponse)
+async def get_expiration_alerts(current_user: str = Depends(get_current_user)):
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    families = await get_user_families(user_id)
+    if not families:
+        return {
+            "expired_within_3_days": [],
+            "expiring_within_3_days": [],
+            "total_count": 0
+        }
+
+    family_ids = [family["id"] for family in families]
+    placeholders = ','.join(['%s' for _ in family_ids])
+
+    now = datetime.now()
+    range_start = now - timedelta(days=3)
+    range_end = now + timedelta(days=3)
+
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            query = (
+                f"SELECT id, name, description, location, family_id, expiration_date "
+                f"FROM items "
+                f"WHERE family_id IN ({placeholders}) "
+                f"AND expiration_date IS NOT NULL "
+                f"AND expiration_date BETWEEN %s AND %s "
+                f"ORDER BY expiration_date ASC"
+            )
+            await cursor.execute(query, family_ids + [range_start, range_end])
+            rows = await cursor.fetchall()
+
+    expired_within_3_days = []
+    expiring_within_3_days = []
+
+    for row in rows:
+        expiration_date = row['expiration_date']
+        if not expiration_date:
+            continue
+
+        days_offset = (expiration_date.date() - now.date()).days
+        item_data = {
+            "id": row['id'],
+            "name": row['name'],
+            "description": row['description'],
+            "location": row['location'],
+            "family_id": row['family_id'],
+            "expiration_date": expiration_date.isoformat(),
+            "days_offset": days_offset,
+        }
+
+        if expiration_date < now:
+            expired_within_3_days.append(item_data)
+        else:
+            expiring_within_3_days.append(item_data)
+
+    return {
+        "expired_within_3_days": expired_within_3_days,
+        "expiring_within_3_days": expiring_within_3_days,
+        "total_count": len(expired_within_3_days) + len(expiring_within_3_days)
+    }
 
 @item_app.put("/items/{item_id}", response_model=ItemResponse)
 async def update_item(item_id: str, item_update: ItemUpdate, current_user: str = Depends(get_current_user)):
