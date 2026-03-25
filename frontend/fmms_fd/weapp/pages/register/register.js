@@ -4,8 +4,26 @@ Page({
   data: {
     username: '',
     email: '',
+    phone: '',
     password: '',
-    loading: false
+    agreed: false,
+    loading: false,
+    statusBarHeight: 24
+  },
+
+  onLoad() {
+    this.initSystemMetrics()
+  },
+
+  initSystemMetrics() {
+    try {
+      const sysInfo = wx.getSystemInfoSync()
+      this.setData({
+        statusBarHeight: sysInfo.statusBarHeight || 24
+      })
+    } catch (error) {
+      console.error('获取设备信息失败:', error)
+    }
   },
 
   onUsernameInput(e) {
@@ -20,16 +38,31 @@ Page({
     })
   },
 
+  onPhoneInput(e) {
+    this.setData({
+      phone: e.detail.value
+    })
+  },
+
   onPasswordInput(e) {
     this.setData({
       password: e.detail.value
     })
   },
 
+  toggleAgreement() {
+    this.setData({
+      agreed: !this.data.agreed
+    })
+  },
+
   async handleRegister() {
-    const { username, email, password } = this.data
-    
-    if (!username || !email || !password) {
+    const username = (this.data.username || '').trim()
+    const email = (this.data.email || '').trim()
+    const phone = (this.data.phone || '').trim()
+    const password = this.data.password || ''
+
+    if (!username || !email || !phone || !password) {
       wx.showToast({
         title: '请填写完整信息',
         icon: 'none'
@@ -46,6 +79,22 @@ Page({
       return
     }
 
+    if (password.length < 8) {
+      wx.showToast({
+        title: '密码至少 8 位字符',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!this.data.agreed) {
+      wx.showToast({
+        title: '请先同意服务协议',
+        icon: 'none'
+      })
+      return
+    }
+
     this.setData({ loading: true })
 
     try {
@@ -55,7 +104,7 @@ Page({
         data: {
           username,
           email,
-          phone: '12312341234',
+          phone,
           password
         }
       })
@@ -66,8 +115,10 @@ Page({
       })
 
       setTimeout(() => {
-        wx.navigateBack()
-      }, 1500)
+        wx.redirectTo({
+          url: '/pages/login/login'
+        })
+      }, 1000)
     } catch (error) {
       console.error('注册失败:', error)
     } finally {
@@ -76,6 +127,8 @@ Page({
   },
 
   goToLogin() {
-    wx.navigateBack()
+    wx.redirectTo({
+      url: '/pages/login/login'
+    })
   }
 })
