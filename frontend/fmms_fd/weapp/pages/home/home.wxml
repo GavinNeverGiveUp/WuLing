@@ -1,70 +1,107 @@
-<view class="home-container">
-  <view class="navbar">
-    <view class="navbar-left">
-      <view class="menu-btn" bindtap="goToProfile">
-        <text class="menu-line"></text>
-        <text class="menu-line"></text>
-        <text class="menu-line"></text>
+<view class="mobile-page" bindtap="closeNoticePanel">
+  <view class="mobile-topbar" style="padding-top: {{topSafeInset}}px;" catchtap="noop">
+    <view class="topbar-main">
+      <view class="title-block">
+        <view class="mobile-brand">
+          <image class="mobile-brand-icon" src="../../images/logo-home-smile.svg" mode="aspectFit"></image>
+          <text class="mobile-brand-name">物灵<text class="mobile-brand-dot">.</text></text>
+        </view>
+        <view class="hello-line">
+          <text class="hello-muted">你好，</text>
+          <text class="hello-name">{{userDisplayName}}</text>
+        </view>
+        <text class="date-text">今天是 {{dateLabel}}</text>
+      </view>
+
+      <view class="topbar-actions">
+        <view class="notice-trigger" bindtap="toggleNoticePanel">
+          <text class="notice-trigger-text">{{expiringCount}} 件需关注</text>
+          <view wx:if="{{hasNotifications}}" class="notice-dot"></view>
+        </view>
+
+        <view class="icon-btn" bindtap="goToSettings">
+          <image class="icon-btn-image" src="../../images/icon-settings.svg" mode="aspectFit"></image>
+        </view>
+
+        <view class="icon-btn" bindtap="handleLogout">
+          <image class="icon-btn-image" src="../../images/icon-logout.svg" mode="aspectFit"></image>
+        </view>
       </view>
     </view>
-    <view class="navbar-center">
-      <text class="navbar-title">AI小管家</text>
-    </view>
-    <view class="navbar-right"></view>
   </view>
 
-  <scroll-view 
-    class="chat-container" 
-    scroll-y 
+  <view wx:if="{{showNoticePanel}}" class="notice-mask" bindtap="closeNoticePanel"></view>
+  <view wx:if="{{showNoticePanel}}" class="notice-panel" style="top: {{chatTop + 10}}px;" catchtap="noop">
+    <view class="notice-panel-title">待关注事项</view>
+
+    <view wx:if="{{!hasNotifications}}" class="notice-empty">暂无待关注事项</view>
+
+    <block wx:for="{{notificationGroups}}" wx:key="key" wx:for-item="group">
+      <view wx:if="{{group.items.length > 0}}" class="notice-group">
+        <view class="notice-group-title">{{group.title}}</view>
+
+        <block wx:for="{{group.items}}" wx:key="id" wx:for-item="notice">
+          <view class="notice-item">
+            <view class="notice-item-row">
+              <text class="notice-item-name">{{notice.title}}</text>
+              <text wx:if="{{notice.tag}}" class="notice-item-tag {{notice.tagType === 'danger' ? 'danger' : ''}}">{{notice.tag}}</text>
+            </view>
+            <text wx:if="{{notice.meta}}" class="notice-item-meta">{{notice.meta}}</text>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+
+  <scroll-view
+    class="chat-scroll"
+    scroll-y
+    enhanced
+    show-scrollbar="false"
     scroll-into-view="{{scrollIntoView}}"
     scroll-with-animation
+    style="top: {{chatTop}}px; bottom: {{chatBottom}}px;"
+    bindtap="closeNoticePanel"
   >
-    <view class="messages-list">
-      <block wx:for="{{messages}}" wx:key="index">
-        <view 
-          class="message-item {{item.role === 'user' ? 'message-right' : 'message-left'}}"
-          id="msg-{{index}}"
-        >
-          <view class="message-avatar message-avatar-{{item.role}}">
-            {{item.role === 'user' ? firstChar : 'AI'}}
+    <view class="system-tip">已开启安全智能对话界面</view>
+
+    <block wx:for="{{messages}}" wx:key="id">
+      <view class="message-line {{item.role === 'user' ? 'line-user' : 'line-assistant'}}" id="msg-{{item.id}}">
+        <view wx:if="{{item.role !== 'user'}}" class="avatar bot-avatar">灵</view>
+
+        <view class="bubble {{item.role === 'user' ? 'bubble-user' : 'bubble-assistant'}}">
+          <view wx:if="{{item.isLoading}}" class="loading-wrap">
+            <view class="loading-dot"></view>
+            <text class="loading-text">物灵正在思考中...</text>
           </view>
-          <view class="message-content-wrapper">
-            <text class="message-sender">{{item.role === 'user' ? '我' : 'AI小管家'}}</text>
-            <view class="message-content message-{{item.role}}">
-              <rich-text nodes="{{item.richText}}"></rich-text>
-            </view>
-          </view>
+          <rich-text wx:else nodes="{{item.richText}}"></rich-text>
         </view>
-      </block>
-      <view class="typing-indicator" wx:if="{{sending}}" id="msg-typing">
-        <view class="typing-avatar">
-          小
-        </view>
-        <view class="typing-content">
-          <view class="typing-dots">
-            <text class="typing-dot"></text>
-            <text class="typing-dot"></text>
-            <text class="typing-dot"></text>
-          </view>
-        </view>
+
+        <view wx:if="{{item.role === 'user'}}" class="avatar user-avatar">{{userInitial}}</view>
       </view>
-      <view id="msg-bottom"></view>
-    </view>
+    </block>
+
+    <view id="msg-bottom"></view>
   </scroll-view>
 
-  <view class="input-container">
-    <view class="input-wrapper">
-      <textarea 
-        class="chat-input" 
-        placeholder="发消息..."
+  <view class="mobile-composer" style="bottom: {{composerBottom}}px;" catchtap="noop">
+    <view class="composer-shell">
+      <textarea
+        class="composer-input"
+        placeholder="让物灵帮你找东西..."
         value="{{inputText}}"
         bindinput="onInputChange"
+        bindkeyboardheightchange="onKeyboardHeightChange"
         auto-height
-        maxlength="500"
+        maxlength="2000"
+        cursor-spacing="20"
       ></textarea>
-    </view>
-    <view class="send-btn {{sending ? 'send-btn-disabled' : ''}}" bindtap="handleSend">
-      <text class="send-icon">{{sending ? '...' : '➤'}}</text>
+
+      <view class="send-btn {{sending ? 'send-btn-disabled' : ''}}" bindtap="handleSend">
+        <text class="send-icon">{{sending ? '...' : '➤'}}</text>
+      </view>
     </view>
   </view>
 </view>
+
+

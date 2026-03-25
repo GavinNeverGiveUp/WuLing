@@ -1,46 +1,74 @@
-<view class="login-container">
-  <view class="login-header">
-    <text class="title">AI小管家</text>
-    <text class="subtitle">一个能帮你管理家庭物资的AI小助手</text>
+<view class="auth-page">
+  <view class="auth-backdrop">
+    <view class="glow glow-left"></view>
+    <view class="glow glow-right"></view>
   </view>
 
-  <view class="login-form">
-    <view class="form-item">
-      <view class="form-item-label">用户名</view>
-      <input 
-        class="form-item-input" 
-        placeholder="请输入用户名"
-        value="{{username}}"
-        bindinput="onUsernameInput"
-      />
+  <scroll-view class="auth-scroll" scroll-y enhanced show-scrollbar="false">
+    <view class="auth-shell" style="padding-top: {{statusBarHeight + 24}}px;">
+      <view class="auth-story">
+        <text class="story-badge">AI 驱动的家庭秩序</text>
+        <text class="story-title">你的家，<text class="story-title-accent">物灵</text>都记得</text>
+        <text class="story-copy">让整理不再是负担，而是生活的诗意。物灵通过智能理解，为你建立家中万物的数字映射。</text>
+
+        <view class="story-points">
+          <view class="story-point">
+            <text class="story-point-title">智能寻物</text>
+            <text class="story-point-copy">一句话就能定位相机、药箱、备用钥匙和常用物资</text>
+          </view>
+          <view class="story-point">
+            <text class="story-point-title">临期提醒</text>
+            <text class="story-point-copy">药品、食品和个护用品的有效期状态统一掌握</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="auth-card">
+        <view class="brand-lockup">
+          <image class="brand-icon-image" src="../../images/logo-home-smile.svg" mode="aspectFit"></image>
+          <text class="brand-name">物灵<text class="brand-dot">.</text></text>
+        </view>
+
+        <view class="auth-copy">
+          <text class="auth-title">登录物灵</text>
+          <text class="auth-desc">连接你的家庭物资视图，继续使用物灵。</text>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">用户名</text>
+          <input
+            class="form-input"
+            placeholder="请输入用户名"
+            value="{{username}}"
+            bindinput="onUsernameInput"
+          />
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">访问密码</text>
+          <input
+            class="form-input"
+            placeholder="请输入密码"
+            password
+            value="{{password}}"
+            bindinput="onPasswordInput"
+          />
+        </view>
+
+        <button
+          class="submit-btn"
+          bindtap="handleLogin"
+          loading="{{loading}}"
+          disabled="{{loading}}"
+        >
+          {{loading ? '登录中...' : '登录物灵'}}
+        </button>
+
+        <view class="auth-switch">
+          <text class="switch-text">还没有账号？</text>
+          <text class="switch-link" bindtap="goToRegister">立即免费注册</text>
+        </view>
+      </view>
     </view>
-
-    <view class="form-item">
-      <view class="form-item-label">密码</view>
-      <input 
-        class="form-item-input" 
-        placeholder="请输入密码"
-        password
-        value="{{password}}"
-        bindinput="onPasswordInput"
-      />
-    </view>
-
-    <button 
-      class="btn-primary login-btn" 
-      bindtap="handleLogin"
-      loading="{{loading}}"
-    >
-      登录
-    </button>
-
-    <view class="register-link">
-      <text>还没有账号？</text>
-      <text class="link" bindtap="goToRegister">立即注册</text>
-    </view>
-  </view>
-
-  <view class="footer">
-    <text>BY PURELAND © 2026</text>
-  </view>
+  </scroll-view>
 </view>
