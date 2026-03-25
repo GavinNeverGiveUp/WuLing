@@ -1,10 +1,12 @@
 ﻿import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
+import { isLikelyMobile } from '@/utils/device'
 
 const Landing = () => import('@/views/LandingView.vue')
 const Login = () => import('@/views/LoginView.vue')
 const Register = () => import('@/views/RegisterView.vue')
 const Home = () => import('@/views/HomeView.vue')
+const HomeMobile = () => import('@/views/MobileHomeView.vue')
 const Setting = () => import('@/views/SettingView.vue')
 
 const routes = [
@@ -32,6 +34,11 @@ const routes = [
     component: Home
   },
   {
+    path: '/m/home',
+    name: 'HomeMobile',
+    component: HomeMobile
+  },
+  {
     path: '/settings',
     name: 'Setting',
     component: Setting
@@ -49,6 +56,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = store.state.token
   const requiresNoAuth = to.matched.some((record) => record.meta.requiresNoAuth)
+  const isMobile = isLikelyMobile()
 
   if (!requiresNoAuth && !token) {
     next('/login')
@@ -56,6 +64,16 @@ router.beforeEach((to, from, next) => {
   }
 
   if (token && ['Login', 'Register'].includes(to.name)) {
+    next(isMobile ? '/m/home' : '/home')
+    return
+  }
+
+  if (token && to.name === 'Home' && isMobile) {
+    next('/m/home')
+    return
+  }
+
+  if (token && to.name === 'HomeMobile' && !isMobile) {
     next('/home')
     return
   }
@@ -64,4 +82,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-
