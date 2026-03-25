@@ -4,15 +4,29 @@ Page({
   data: {
     username: '',
     password: '',
-    loading: false
+    loading: false,
+    statusBarHeight: 24
   },
 
   onLoad() {
+    this.initSystemMetrics()
+
     const token = wx.getStorageSync('token')
     if (token) {
       wx.reLaunch({
         url: '/pages/home/home'
       })
+    }
+  },
+
+  initSystemMetrics() {
+    try {
+      const sysInfo = wx.getSystemInfoSync()
+      this.setData({
+        statusBarHeight: sysInfo.statusBarHeight || 24
+      })
+    } catch (error) {
+      console.error('获取设备信息失败:', error)
     }
   },
 
@@ -29,8 +43,9 @@ Page({
   },
 
   async handleLogin() {
-    const { username, password } = this.data
-    
+    const username = (this.data.username || '').trim()
+    const password = this.data.password || ''
+
     if (!username || !password) {
       wx.showToast({
         title: '请输入用户名和密码',
@@ -53,14 +68,14 @@ Page({
 
       if (res.access_token) {
         wx.setStorageSync('token', res.access_token)
-        
+
         const userInfo = await request({
           url: '/user/me',
           method: 'GET'
         })
-        
+
         wx.setStorageSync('userInfo', userInfo)
-        
+
         wx.showToast({
           title: '登录成功',
           icon: 'success'
@@ -70,7 +85,7 @@ Page({
           wx.reLaunch({
             url: '/pages/home/home'
           })
-        }, 1000)
+        }, 900)
       }
     } catch (error) {
       console.error('登录失败:', error)

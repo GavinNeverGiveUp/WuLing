@@ -1,18 +1,60 @@
-<view class="profile-container">
-  <view class="profile-card">
-    <view class="profile-avatar">{{firstChar}}</view>
-    <view class="profile-info">
-      <text class="profile-username">{{userInfo.username}}</text>
-      <text class="profile-email">{{userInfo.email}}</text>
-      <text class="profile-phone">{{userInfo.phone}}</text>
+<view class="profile-page">
+  <view class="profile-backdrop">
+    <view class="glow glow-left"></view>
+    <view class="glow glow-right"></view>
+  </view>
+
+  <scroll-view class="profile-scroll" scroll-y enhanced show-scrollbar="false">
+    <view class="profile-shell" style="padding-top: {{statusBarHeight + 24}}px;">
+      <view class="profile-topbar">
+        <view class="back-btn" bindtap="goBackHome">
+          <text class="back-icon">←</text>
+          <text class="back-text">返回</text>
+        </view>
+        <text class="topbar-title">设置中心</text>
+      </view>
+
+      <view class="profile-card hero-card">
+        <view class="brand-lockup">
+          <image class="brand-icon-image" src="../../images/logo-home-smile.svg" mode="aspectFit"></image>
+          <text class="brand-name">物灵<text class="brand-dot">.</text></text>
+        </view>
+
+        <view class="profile-avatar">{{userInitial}}</view>
+        <text class="profile-name">{{userDisplayName}}</text>
+        <text class="profile-sub">家庭物资管理成员</text>
+      </view>
+
+      <view class="profile-card info-card">
+        <view class="info-row">
+          <text class="info-label">用户名</text>
+          <text class="info-value">{{userInfo.username || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">邮箱</text>
+          <text class="info-value">{{userInfo.email || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">手机号</text>
+          <text class="info-value">{{userInfo.phone || '-'}}</text>
+        </view>
+      </view>
+
+      <view class="action-list">
+        <view class="action-btn action-home" bindtap="goBackHome">
+          <text class="action-title">回到首页</text>
+          <text class="action-sub">继续使用家庭物资智能对话</text>
+        </view>
+
+        <view class="action-btn action-logout" bindtap="handleLogout">
+          <text class="action-title">退出登录</text>
+          <text class="action-sub">退出当前账号并返回登录页面</text>
+        </view>
+      </view>
+
+      <view class="profile-footer">
+        <text>BY PURELAND © 2026</text>
+      </view>
     </view>
-  </view>
-
-  <view class="logout" bindtap="handleLogout">
-    <text class="action-text">退出登录</text>
-  </view>
-
-  <view class="footer">
-    <text>BY PURELAND © 2026</text>
-  </view>
+  </scroll-view>
 </view>
