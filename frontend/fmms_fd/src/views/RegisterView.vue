@@ -46,25 +46,21 @@
         </div>
 
         <form class="auth-form" @submit.prevent="onSubmit">
-          <label>
-            <span>用户名</span>
+          <BaseFormField label="用户名" variant="auth">
             <input v-model="formState.username" type="text" placeholder="请输入你的称呼">
-          </label>
+          </BaseFormField>
 
-          <label>
-            <span>电子邮箱</span>
+          <BaseFormField label="电子邮箱" variant="auth">
             <input v-model="formState.email" type="email" placeholder="example@home.com">
-          </label>
+          </BaseFormField>
 
-          <label>
-            <span>手机号</span>
+          <BaseFormField label="手机号" variant="auth">
             <input v-model="formState.phone" type="tel" placeholder="请输入手机号">
-          </label>
+          </BaseFormField>
 
-          <label>
-            <span>设置密码</span>
+          <BaseFormField label="设置密码" variant="auth">
             <input v-model="formState.password" type="password" placeholder="至少 8 位字符">
-          </label>
+          </BaseFormField>
 
           <label class="agreement">
             <input v-model="agreed" type="checkbox">
@@ -89,6 +85,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import BaseFormField from '@/components/BaseFormField.vue'
 import request from '@/utils/request'
 
 const router = useRouter()
@@ -285,21 +282,10 @@ async function onSubmit() {
   gap: 16px;
 }
 
-.auth-form label {
-  display: grid;
-  gap: 8px;
-}
-
-.auth-form span {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #6c5f56;
-}
-
-.auth-form input[type='text'],
-.auth-form input[type='email'],
-.auth-form input[type='tel'],
-.auth-form input[type='password'] {
+.auth-form :deep(input[type='text']),
+.auth-form :deep(input[type='email']),
+.auth-form :deep(input[type='tel']),
+.auth-form :deep(input[type='password']) {
   width: 100%;
   font-family: inherit;
   padding: 1rem 1.1rem;
@@ -310,10 +296,10 @@ async function onSubmit() {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.auth-form input[type='text']:focus,
-.auth-form input[type='email']:focus,
-.auth-form input[type='tel']:focus,
-.auth-form input[type='password']:focus {
+.auth-form :deep(input[type='text']:focus),
+.auth-form :deep(input[type='email']:focus),
+.auth-form :deep(input[type='tel']:focus),
+.auth-form :deep(input[type='password']:focus) {
   border-color: rgba(171, 127, 91, 0.42);
   box-shadow: 0 0 0 4px rgba(212, 176, 140, 0.14);
 }

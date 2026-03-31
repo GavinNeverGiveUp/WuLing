@@ -35,6 +35,8 @@ class FamilyCreate(BaseModel):
 class FamilyResponse(BaseModel):
     id: str
     name: str
+    role: Optional[str] = None
+    is_default: bool = False
 
 
 class MessageResponse(BaseModel):

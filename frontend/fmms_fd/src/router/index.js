@@ -7,7 +7,9 @@ const Login = () => import('@/views/LoginView.vue')
 const Register = () => import('@/views/RegisterView.vue')
 const Home = () => import('@/views/HomeView.vue')
 const HomeMobile = () => import('@/views/MobileHomeView.vue')
+const MobileMgmt = () => import('@/views/MobileMgmtView.vue')
 const Setting = () => import('@/views/SettingView.vue')
+const Mgmt = () => import('@/views/MgmtView.vue')
 
 const routes = [
   {
@@ -39,9 +41,19 @@ const routes = [
     component: HomeMobile
   },
   {
+    path: '/m/mgmt',
+    name: 'MobileMgmt',
+    component: MobileMgmt
+  },
+  {
     path: '/settings',
     name: 'Setting',
     component: Setting
+  },
+  {
+    path: '/mgmt',
+    name: 'Mgmt',
+    component: Mgmt
   }
 ]
 
@@ -73,8 +85,18 @@ router.beforeEach((to, from, next) => {
     return
   }
 
+  if (token && to.name === 'Mgmt' && isMobile) {
+    next('/m/mgmt')
+    return
+  }
+
   if (token && to.name === 'HomeMobile' && !isMobile) {
     next('/home')
+    return
+  }
+
+  if (token && to.name === 'MobileMgmt' && !isMobile) {
+    next('/mgmt')
     return
   }
 

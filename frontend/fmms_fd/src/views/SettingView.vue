@@ -1,39 +1,6 @@
 ﻿<template>
   <div class="settings-page">
-    <aside class="settings-sidebar">
-      <div class="sidebar-top">
-        <router-link class="home-button" to="/" aria-label="返回首页">
-          <img
-            class="icon-img icon-lg"
-            src="https://api.iconify.design/solar/home-smile-bold-duotone.svg?color=%23D4B08C"
-            alt=""
-            aria-hidden="true"
-          >
-        </router-link>
-
-        <nav class="sidebar-nav">
-          <router-link class="nav-icon" to="/home" aria-label="对话">
-            <img class="icon-img" src="https://api.iconify.design/solar/chat-round-line-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </router-link>
-        </nav>
-      </div>
-
-      <div class="sidebar-bottom">
-        <div class="logout-trigger">
-          <button class="logout-btn" type="button" aria-label="退出登录" @click="handleLogout">
-            <img class="icon-img" src="https://api.iconify.design/solar/logout-2-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <span class="logout-tooltip">退出登录</span>
-        </div>
-
-        <div class="settings-trigger">
-          <button class="settings-btn active" type="button" aria-label="设置" aria-current="page">
-            <img class="icon-img" src="https://api.iconify.design/solar/settings-bold.svg?color=%23D4B08C" alt="" aria-hidden="true">
-          </button>
-          <span class="settings-tooltip">设置</span>
-        </div>
-      </div>
-    </aside>
+    <AppSidebar :settings-active="true" @logout="handleLogout" />
 
     <main class="settings-main">
       <header class="settings-header">
@@ -45,12 +12,20 @@
       </header>
 
       <section class="settings-content">
-        <article class="panel profile-panel">
-          <div class="panel-head">
-            <h2>账号信息</h2>
-          </div>
+        <BasePanel class="profile-panel" title="账号信息">
+          <div v-if="isLoadingProfile" class="profile-body" aria-hidden="true">
+            <BaseSkeleton width="74px" height="74px" radius="999px" />
 
-          <div class="profile-body">
+            <div class="profile-grid">
+              <div v-for="field in 3" :key="`profile-skeleton-${field}`">
+                <BaseSkeleton width="34%" height="10px" />
+                <div class="profile-skeleton-value">
+                  <BaseSkeleton width="72%" height="16px" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="profile-body">
             <div class="profile-avatar" aria-label="用户头像">
               <img v-if="userProfile.avatar" :src="userProfile.avatar" alt="用户头像">
               <span v-else>{{ userInitial }}</span>
@@ -71,14 +46,12 @@
               </div>
             </div>
           </div>
-        </article>
+        </BasePanel>
 
-        <article class="panel key-panel">
-          <div class="panel-head">
-            <h2>API Key 管理</h2>
+        <BasePanel class="key-panel" title="API Key 管理">
+          <template #extra>
             <span class="panel-tip">创建、查看与管理你的 Key</span>
-          </div>
-
+          </template>
           <div class="create-row">
             <input
               v-model="newKeyName"
@@ -95,13 +68,29 @@
             <button type="button" @click="copyKey(latestCreatedKey)">复制</button>
           </div>
 
-          <div v-if="isLoadingKeys" class="empty-state">
-            API Key 列表加载中...
+          <div v-if="isLoadingKeys" class="key-list" aria-hidden="true">
+            <article v-for="placeholder in 3" :key="`key-skeleton-${placeholder}`" class="key-item">
+              <div class="key-main">
+                <BaseSkeleton width="32%" height="16px" />
+                <BaseSkeleton width="24%" height="12px" />
+              </div>
+
+              <div class="key-secret">
+                <BaseSkeleton width="100%" height="14px" />
+              </div>
+
+              <div class="key-meta">
+                <BaseSkeleton width="64px" height="24px" radius="999px" />
+                <BaseSkeleton width="30%" height="12px" />
+              </div>
+
+              <div class="key-actions">
+                <BaseSkeleton width="58px" height="30px" radius="8px" />
+              </div>
+            </article>
           </div>
 
-          <div v-else-if="apiKeys.length === 0" class="empty-state">
-            还没有 API Key，先创建一个吧。
-          </div>
+          <BaseEmptyState v-else-if="apiKeys.length === 0" text="还没有 API Key，先创建一个吧。" />
 
           <ul v-else class="key-list">
             <li v-for="item in apiKeys" :key="item.id" class="key-item">
@@ -126,7 +115,7 @@
               </div>
             </li>
           </ul>
-        </article>
+        </BasePanel>
       </section>
     </main>
   </div>
@@ -137,7 +126,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { message } from 'ant-design-vue'
+import AppSidebar from '@/components/AppSidebar.vue'
+import BaseEmptyState from '@/components/BaseEmptyState.vue'
+import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import request from '@/utils/request'
+import BasePanel from '@/components/BasePanel.vue'
 
 const router = useRouter()
 const store = useStore()
@@ -154,6 +147,7 @@ const newKeyName = ref('')
 const latestCreatedKey = ref('')
 const isCreatingKey = ref(false)
 const isLoadingKeys = ref(false)
+const isLoadingProfile = ref(false)
 
 const userInitial = computed(() => (userProfile.value.username || 'U').slice(0, 1).toUpperCase())
 
@@ -163,6 +157,7 @@ onMounted(() => {
 })
 
 async function loadUserProfile() {
+  isLoadingProfile.value = true
   try {
     const me = await request.get('/user/me')
     const merged = {
@@ -188,6 +183,8 @@ async function loadUserProfile() {
       phone: fallback.phone || '',
       avatar: fallback.avatar || ''
     }
+  } finally {
+    isLoadingProfile.value = false
   }
 }
 
@@ -293,128 +290,6 @@ function handleLogout() {
   height: 28px;
 }
 
-.settings-sidebar {
-  width: 80px;
-  background: #ffffff;
-  border-right: 1px solid #f3f4f6;
-  padding: 32px 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sidebar-top {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  align-items: center;
-}
-
-.home-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(212, 176, 140, 0.1);
-  margin-bottom: 40px;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.nav-icon {
-  border: 0;
-  background: transparent;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  text-decoration: none;
-}
-
-.nav-icon:hover {
-  background: rgba(212, 176, 140, 0.08);
-}
-
-.sidebar-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  align-items: center;
-  padding-bottom: 4px;
-}
-
-.logout-trigger,
-.settings-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logout-btn,
-.settings-btn {
-  border: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.logout-btn:hover,
-.settings-btn:hover,
-.settings-btn.active {
-  background: rgba(212, 176, 140, 0.1);
-}
-
-.logout-btn .icon-img,
-.settings-btn .icon-img {
-  width: 20px;
-  height: 20px;
-}
-
-.logout-tooltip,
-.settings-tooltip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-8px);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
-  background: #ffffff;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 20;
-}
-
-.logout-trigger:hover .logout-tooltip,
-.settings-trigger:hover .settings-tooltip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
 .settings-main {
   flex: 1;
   min-width: 0;
@@ -426,6 +301,7 @@ function handleLogout() {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 20px;
+  animation: section-rise-in 0.46s ease both;
 }
 
 .settings-header h1 {
@@ -459,25 +335,14 @@ function handleLogout() {
   gap: 18px;
 }
 
-.panel {
-  background: #ffffff;
-  border: 1px solid #f3f4f6;
-  border-radius: 20px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-  padding: 22px;
+.profile-panel {
+  animation: section-rise-in 0.54s ease both;
+  animation-delay: 0.06s;
 }
 
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.panel-head h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #1f2937;
+.key-panel {
+  animation: section-rise-in 0.62s ease both;
+  animation-delay: 0.12s;
 }
 
 .panel-tip {
@@ -524,6 +389,10 @@ function handleLogout() {
   border: 1px solid #f3ece4;
   border-radius: 12px;
   padding: 10px 12px;
+}
+
+.profile-skeleton-value {
+  margin-top: 10px;
 }
 
 .profile-grid label {
@@ -606,16 +475,6 @@ function handleLogout() {
   border-radius: 10px;
   padding: 6px 10px;
   cursor: pointer;
-}
-
-.empty-state {
-  border-radius: 12px;
-  background: #f9fafb;
-  border: 1px solid #f3f4f6;
-  color: #9ca3af;
-  font-size: 13px;
-  text-align: center;
-  padding: 24px;
 }
 
 .key-list {
@@ -723,17 +582,22 @@ function handleLogout() {
   background: #fef2f2;
 }
 
-@media (min-width: 1024px) {
-  .settings-sidebar {
-    width: 96px;
+@keyframes section-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 1024px) {
-  .settings-sidebar {
-    width: 72px;
-  }
+@media (min-width: 1024px) {
+}
 
+@media (max-width: 1024px) {
   .settings-main {
     padding: 20px;
   }
@@ -746,48 +610,6 @@ function handleLogout() {
 @media (max-width: 768px) {
   .settings-page {
     flex-direction: column;
-  }
-
-  .settings-sidebar {
-    width: 100%;
-    height: 74px;
-    flex-direction: row;
-    padding: 10px 14px;
-    border-right: 0;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .sidebar-top {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 14px;
-  }
-
-  .home-button {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 0;
-  }
-
-  .sidebar-nav,
-  .sidebar-bottom {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .logout-tooltip,
-  .settings-tooltip {
-    left: auto;
-    right: 0;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateY(8px);
-  }
-
-  .logout-trigger:hover .logout-tooltip,
-  .settings-trigger:hover .settings-tooltip {
-    transform: translateY(0);
   }
 
   .settings-header {
@@ -846,8 +668,16 @@ function handleLogout() {
   font-size: 12px;
   color: #9ca3af;
 }
-.key-actions {
+  .key-actions {
     flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-header,
+  .profile-panel,
+  .key-panel {
+    animation: none;
   }
 }
 </style>

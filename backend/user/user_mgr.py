@@ -62,6 +62,7 @@ async def create_family(family: FamilyCreate, current_user: str = Depends(get_cu
         raise HTTPException(status_code=404, detail="用户不存在")
     
     family_id = str(uuid4())
+    default_flag = False
     
     async with get_db() as conn:
         async with conn.cursor() as cursor:
@@ -87,10 +88,11 @@ async def create_family(family: FamilyCreate, current_user: str = Depends(get_cu
                     "UPDATE users SET default_family_id=%s WHERE id=%s",
                     (family_id, user_id)
                 )
+                default_flag = True
             
             await conn.commit()
     
-    return {"id": family_id, "name": family.name}
+    return {"id": family_id, "name": family.name, "role": "owner", "is_default": default_flag}
 
 @user_app.get("/families", response_model=List[FamilyResponse])
 async def get_user_families_endpoint(current_user: str = Depends(get_current_user)):
@@ -101,6 +103,85 @@ async def get_user_families_endpoint(current_user: str = Depends(get_current_use
     
     families = await get_user_families(user_id)
     return families
+
+@user_app.delete("/families/{family_id}")
+async def delete_family(family_id: str, current_user: str = Depends(get_current_user)):
+    user_id = await get_user_id_by_username(current_user)
+    if not user_id:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    async with get_db() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "SELECT id, name FROM families WHERE id=%s",
+                (family_id,)
+            )
+            family = await cursor.fetchone()
+            if not family:
+                raise HTTPException(status_code=404, detail="家庭不存在")
+
+            await cursor.execute(
+                "SELECT role FROM user_families WHERE user_id=%s AND family_id=%s",
+                (user_id, family_id)
+            )
+            membership = await cursor.fetchone()
+            if not membership or membership['role'] != 'owner':
+                raise HTTPException(status_code=403, detail="只有家庭管理员才能删除家庭")
+
+            await cursor.execute(
+                "SELECT user_id FROM user_families WHERE family_id=%s",
+                (family_id,)
+            )
+            member_rows = await cursor.fetchall()
+            member_ids = [row['user_id'] for row in member_rows]
+
+            await cursor.execute(
+                "DELETE FROM items WHERE family_id=%s",
+                (family_id,)
+            )
+            await cursor.execute(
+                "DELETE FROM family_invitations WHERE family_id=%s",
+                (family_id,)
+            )
+            await cursor.execute(
+                "DELETE FROM user_families WHERE family_id=%s",
+                (family_id,)
+            )
+            await cursor.execute(
+                "DELETE FROM families WHERE id=%s",
+                (family_id,)
+            )
+
+            for member_id in member_ids:
+                await cursor.execute(
+                    "SELECT default_family_id FROM users WHERE id=%s",
+                    (member_id,)
+                )
+                default_family = await cursor.fetchone()
+                if not default_family or default_family['default_family_id'] != family_id:
+                    continue
+
+                await cursor.execute(
+                    """
+                    SELECT family_id
+                    FROM user_families
+                    WHERE user_id=%s
+                    ORDER BY family_id ASC
+                    LIMIT 1
+                    """,
+                    (member_id,)
+                )
+                next_family = await cursor.fetchone()
+
+                await cursor.execute(
+                    "UPDATE users SET default_family_id=%s WHERE id=%s",
+                    (next_family['family_id'] if next_family else None, member_id)
+                )
+
+            await conn.commit()
+
+    return {"message": f"Family {family['name']} deleted"}
+
 
 @user_app.post("/families/invitations", response_model=FamilyInvitationResponse)
 async def send_family_invitation(invitation: FamilyInvitationCreate, current_user: str = Depends(get_current_user)):
