@@ -55,13 +55,27 @@ async def get_user_families(user_id: str) -> List[dict]:
     async with get_db() as conn:
         async with conn.cursor() as cursor:
             await cursor.execute("""
-                SELECT f.id, f.name 
-                FROM families f 
-                JOIN user_families uf ON f.id = uf.family_id 
+                SELECT
+                    f.id,
+                    f.name,
+                    uf.role,
+                    CASE WHEN u.default_family_id = f.id THEN TRUE ELSE FALSE END AS is_default
+                FROM families f
+                JOIN user_families uf ON f.id = uf.family_id
+                JOIN users u ON u.id = uf.user_id
                 WHERE uf.user_id = %s
+                ORDER BY is_default DESC, f.name ASC
             """, (user_id,))
             rows = await cursor.fetchall()
-            return [{"id": row['id'], "name": row['name']} for row in rows]
+            return [
+                {
+                    "id": row['id'],
+                    "name": row['name'],
+                    "role": row.get('role'),
+                    "is_default": bool(row.get('is_default'))
+                }
+                for row in rows
+            ]
 
 async def get_default_family(user_id: str) -> Optional[str]:
     families = await get_user_families(user_id)
