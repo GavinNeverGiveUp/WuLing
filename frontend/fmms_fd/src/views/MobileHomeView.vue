@@ -614,6 +614,8 @@ function goToMgmt() {
   overscroll-behavior: contain;
   padding: 14px 12px;
   padding-bottom: calc(var(--composer-height) + var(--vv-bottom-offset) + env(safe-area-inset-bottom, 0px) + 14px);
+  animation: mobile-section-rise-in 0.5s ease both;
+  animation-delay: 0.04s;
 }
 
 .system-tip {
@@ -738,6 +740,8 @@ function goToMgmt() {
   bottom: calc(var(--vv-bottom-offset) + env(safe-area-inset-bottom, 0px));
   padding: 8px 10px 10px;
   z-index: 30;
+  animation: mobile-section-rise-in 0.56s ease both;
+  animation-delay: 0.1s;
 }
 
 .composer-shell {
@@ -790,6 +794,18 @@ function goToMgmt() {
   }
 }
 
+@keyframes mobile-section-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 380px) {
   .mobile-chat-page {
     --notice-panel-top: calc(env(safe-area-inset-top, 0px) + 72px);
@@ -802,6 +818,13 @@ function goToMgmt() {
 
   .messages-scroll {
     padding: 12px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-scroll,
+  .mobile-composer {
+    animation: none;
   }
 }
 </style>

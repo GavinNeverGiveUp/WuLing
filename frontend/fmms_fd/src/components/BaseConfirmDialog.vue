@@ -115,7 +115,7 @@ function handleCancel() {
   border-radius: 10px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   min-width: 96px;
 }
 
@@ -129,6 +129,7 @@ function handleCancel() {
 .confirm-cancel:hover {
   background: #fafafa;
   border-color: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .confirm-submit {
@@ -141,6 +142,7 @@ function handleCancel() {
 .confirm-submit:hover {
   background: #fafafa;
   border-color: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .confirm-submit.danger {
@@ -153,6 +155,19 @@ function handleCancel() {
 .confirm-cancel:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+}
+
+.confirm-cancel:active,
+.confirm-submit:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-cancel,
+  .confirm-submit {
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {

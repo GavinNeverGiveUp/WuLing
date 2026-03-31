@@ -104,6 +104,7 @@ function getNavIcon(target) {
   justify-content: center;
   background: rgba(212, 176, 140, 0.1);
   margin-bottom: 40px;
+  transition: transform 0.2s ease, box-shadow 0.22s ease, background-color 0.2s ease;
 }
 
 .sidebar-nav {
@@ -130,7 +131,7 @@ function getNavIcon(target) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: transform 0.18s ease, background-color 0.2s ease, box-shadow 0.22s ease;
   text-decoration: none;
 }
 
@@ -139,6 +140,8 @@ function getNavIcon(target) {
 .settings-btn:hover,
 .settings-btn.active {
   background: rgba(212, 176, 140, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(212, 176, 140, 0.12);
 }
 
 .nav-tooltip,
@@ -159,8 +162,9 @@ function getNavIcon(target) {
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, filter 0.18s ease;
   z-index: 20;
+  filter: blur(2px);
 }
 
 .nav-trigger:hover .nav-tooltip,
@@ -168,6 +172,7 @@ function getNavIcon(target) {
 .settings-trigger:hover .settings-tooltip {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
+  filter: blur(0);
 }
 
 .sidebar-bottom {
@@ -196,11 +201,25 @@ function getNavIcon(target) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: transform 0.18s ease, background-color 0.2s ease, box-shadow 0.22s ease;
 }
 
 .logout-btn:hover {
   background: rgba(212, 176, 140, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(212, 176, 140, 0.12);
+}
+
+.home-button:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(212, 176, 140, 0.18);
+}
+
+.home-button:active,
+.nav-icon:active,
+.settings-btn:active,
+.logout-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .icon-img {
@@ -218,6 +237,18 @@ function getNavIcon(target) {
 .settings-btn .icon-img {
   width: 20px;
   height: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-button,
+  .nav-icon,
+  .settings-btn,
+  .logout-btn,
+  .nav-tooltip,
+  .logout-tooltip,
+  .settings-tooltip {
+    transition: none;
+  }
 }
 
 @media (min-width: 1024px) {

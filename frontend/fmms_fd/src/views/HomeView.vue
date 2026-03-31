@@ -419,211 +419,6 @@ function handleLogout() {
   height: 28px;
 }
 
-.sidebar {
-  width: 80px;
-  background: #ffffff;
-  border-right: 1px solid #f3f4f6;
-  padding: 32px 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sidebar-top {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  align-items: center;
-}
-
-.home-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(212, 176, 140, 0.1);
-  margin-bottom: 40px;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.nav-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-icon {
-  border: 0;
-  background: transparent;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  text-decoration: none;
-}
-
-.nav-icon.active {
-  background: rgba(212, 176, 140, 0.05);
-}
-
-.nav-icon:hover {
-  background: rgba(212, 176, 140, 0.08);
-}
-
-.nav-tooltip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-8px);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
-  background: #ffffff;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 20;
-}
-
-.nav-trigger:hover .nav-tooltip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
-.sidebar-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  align-items: center;
-  padding-bottom: 4px;
-}
-
-.logout-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logout-btn {
-  border: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.logout-btn:hover {
-  background: rgba(212, 176, 140, 0.1);
-}
-
-.logout-btn .icon-img {
-  width: 20px;
-  height: 20px;
-}
-
-.logout-tooltip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-8px);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
-  background: #ffffff;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 20;
-}
-
-.logout-trigger:hover .logout-tooltip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
-.settings-trigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.settings-btn {
-  border: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.settings-btn:hover {
-  background: rgba(212, 176, 140, 0.1);
-}
-
-.settings-btn .icon-img {
-  width: 20px;
-  height: 20px;
-}
-
-.settings-tooltip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-8px);
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid #f3f4f6;
-  background: #ffffff;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 20;
-}
-
-.settings-trigger:hover .settings-tooltip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
 .main-wrap {
   flex: 1;
   display: flex;
@@ -645,6 +440,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  animation: section-rise-in 0.48s ease both;
 }
 
 .hello-text {
@@ -732,6 +528,8 @@ function handleLogout() {
   min-height: 0;
   position: relative;
   z-index: 1;
+  animation: section-rise-in 0.56s ease both;
+  animation-delay: 0.06s;
 }
 
 .chat-scroll {
@@ -867,6 +665,8 @@ function handleLogout() {
   inset-inline: 0;
   bottom: 40px;
   padding: 0 32px;
+  animation: section-rise-in 0.6s ease both;
+  animation-delay: 0.12s;
 }
 
 .composer-bar {
@@ -956,6 +756,18 @@ function handleLogout() {
   }
 }
 
+@keyframes section-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .composer-hint {
   margin-top: 12px;
   display: flex;
@@ -986,16 +798,9 @@ function handleLogout() {
 }
 
 @media (min-width: 1024px) {
-  .sidebar {
-    width: 96px;
-  }
 }
 
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 72px;
-  }
-
   .topbar {
     padding: 0 20px;
   }
@@ -1017,70 +822,6 @@ function handleLogout() {
 @media (max-width: 768px) {
   .dashboard-page {
     flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: 74px;
-    flex-direction: row;
-    padding: 10px 14px;
-    border-right: 0;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .sidebar-top {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 14px;
-  }
-
-  .home-button {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 0;
-  }
-
-  .sidebar-nav,
-  .sidebar-bottom {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .nav-tooltip {
-    left: auto;
-    right: 0;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateY(8px);
-  }
-
-  .nav-trigger:hover .nav-tooltip {
-    transform: translateY(0);
-  }
-
-  .logout-tooltip {
-    left: auto;
-    right: 0;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateY(8px);
-  }
-
-  .logout-trigger:hover .logout-tooltip {
-    transform: translateY(0);
-  }
-
-  .settings-tooltip {
-    left: auto;
-    right: 0;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateY(8px);
-  }
-
-  .settings-trigger:hover .settings-tooltip {
-    transform: translateY(0);
   }
 
   .topbar {
@@ -1117,6 +858,14 @@ function handleLogout() {
   .composer-hint {
     flex-wrap: wrap;
     gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .chat-section,
+  .composer-area {
+    animation: none;
   }
 }
 </style>

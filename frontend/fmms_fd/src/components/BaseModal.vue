@@ -1,17 +1,19 @@
 <template>
-  <div v-if="modelValue" class="base-modal-overlay" @click.self="handleOverlayClick">
-    <section class="base-modal-card" :style="modalStyle" role="dialog" aria-modal="true">
-      <div class="base-modal-head">
-        <div>
-          <h3>{{ title }}</h3>
-          <p v-if="description">{{ description }}</p>
+  <transition name="modal-fade" appear>
+    <div v-if="modelValue" class="base-modal-overlay" @click.self="handleOverlayClick">
+      <section class="base-modal-card" :style="modalStyle" role="dialog" aria-modal="true">
+        <div class="base-modal-head">
+          <div>
+            <h3>{{ title }}</h3>
+            <p v-if="description">{{ description }}</p>
+          </div>
+          <button type="button" class="base-modal-close" @click="closeModal">{{ closeText }}</button>
         </div>
-        <button type="button" class="base-modal-close" @click="closeModal">{{ closeText }}</button>
-      </div>
 
-      <slot />
-    </section>
-  </div>
+        <slot />
+      </section>
+    </div>
+  </transition>
 </template>
 
 <script setup>
@@ -85,6 +87,8 @@ function handleOverlayClick() {
   border: 1px solid #f3f4f6;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
   padding: 22px;
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .base-modal-head {
@@ -121,6 +125,42 @@ function handleOverlayClick() {
 .base-modal-close:hover {
   background: #fafafa;
   border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+.base-modal-close:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.modal-fade-enter-active .base-modal-card,
+.modal-fade-leave-active .base-modal-card {
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .base-modal-card,
+.modal-fade-leave-to .base-modal-card {
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base-modal-close,
+  .modal-fade-enter-active,
+  .modal-fade-leave-active,
+  .modal-fade-enter-active .base-modal-card,
+  .modal-fade-leave-active .base-modal-card {
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {

@@ -35,7 +35,21 @@
       </section>
 
       <section class="content-section">
-        <BaseEmptyState v-if="isLoadingFamilies" text="家庭列表加载中..." />
+        <div v-if="isLoadingFamilies" class="family-list family-skeleton-list" aria-hidden="true">
+          <article v-for="placeholder in 3" :key="`mobile-family-skeleton-${placeholder}`" class="family-card family-card-skeleton">
+            <BaseSkeleton height="132px" radius="18px 18px 0 0" />
+            <div class="family-body family-body-skeleton">
+              <div class="family-main">
+                <BaseSkeleton width="58%" height="18px" />
+                <div class="family-skeleton-meta">
+                  <BaseSkeleton width="84%" height="12px" />
+                  <BaseSkeleton width="72%" height="12px" />
+                </div>
+              </div>
+              <BaseSkeleton width="34px" height="34px" radius="999px" />
+            </div>
+          </article>
+        </div>
         <BaseEmptyState v-else-if="families.length === 0" :rich="true">
           <span>你还没有加入任何家庭，先创建一个新的家庭开始管理吧。</span>
           <BaseButton variant="primary" :disabled="isCreatingFamily" @click="openFamilyModal">
@@ -81,33 +95,35 @@
                   >
                 </button>
 
-                <div v-if="activeFamilyMenuId === family.id" class="family-menu">
-                  <button
-                    type="button"
-                    class="family-menu-item"
-                    :disabled="family.is_default"
-                    @click="setDefaultFamily(family)"
-                  >
-                    {{ family.is_default ? '当前已是默认家庭' : '设为默认家庭' }}
-                  </button>
-                  <button
-                    v-if="family.role === 'owner'"
-                    type="button"
-                    class="family-menu-item"
-                    :disabled="isManagingFamilyId === family.id"
-                    @click="openMembersPanel(family)"
-                  >
-                    {{ isManagingFamilyId === family.id ? '成员加载中...' : '管理成员' }}
-                  </button>
-                  <button
-                    type="button"
-                    class="family-menu-item danger"
-                    :disabled="isDeletingFamilyId === family.id"
-                    @click="removeFamily(family)"
-                  >
-                    {{ isDeletingFamilyId === family.id ? '删除中...' : '删除家庭' }}
-                  </button>
-                </div>
+                <transition name="family-menu-pop">
+                  <div v-if="activeFamilyMenuId === family.id" class="family-menu">
+                    <button
+                      type="button"
+                      class="family-menu-item"
+                      :disabled="family.is_default"
+                      @click="setDefaultFamily(family)"
+                    >
+                      {{ family.is_default ? '当前已是默认家庭' : '设为默认家庭' }}
+                    </button>
+                    <button
+                      v-if="family.role === 'owner'"
+                      type="button"
+                      class="family-menu-item"
+                      :disabled="isManagingFamilyId === family.id"
+                      @click="openMembersPanel(family)"
+                    >
+                      {{ isManagingFamilyId === family.id ? '成员加载中...' : '管理成员' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="family-menu-item danger"
+                      :disabled="isDeletingFamilyId === family.id"
+                      @click="removeFamily(family)"
+                    >
+                      {{ isDeletingFamilyId === family.id ? '删除中...' : '删除家庭' }}
+                    </button>
+                  </div>
+                </transition>
               </div>
             </div>
           </article>
@@ -130,39 +146,70 @@
           </div>
         </div>
 
-        <BaseEmptyState v-if="!selectedFamily" text="先从上面的家庭卡片中选择一个家庭。" />
-        <BaseEmptyState v-else-if="isLoadingItems" text="物资列表加载中..." />
-        <BaseEmptyState v-else-if="filteredItems.length === 0" text="这个家庭还没有物资，点击上方按钮开始添加。" />
-
-        <div v-else class="item-list">
-          <article v-for="item in filteredItems" :key="item.id" class="item-card">
-            <div class="item-head">
-              <div>
-                <h3>{{ item.name || '-' }}</h3>
-                <p>{{ item.location || '-' }}</p>
-              </div>
-              <div class="item-actions">
-                <BaseButton variant="text" @click="openItemModal(item)">编辑</BaseButton>
-                <BaseButton variant="danger" @click="deleteItem(item)">删除</BaseButton>
-              </div>
+        <transition name="inventory-swap" mode="out-in">
+          <div :key="inventoryViewKey">
+            <BaseEmptyState v-if="!selectedFamily" text="先从上面的家庭卡片中选择一个家庭。" />
+            <div v-else-if="isLoadingItems" class="item-list item-skeleton-list" aria-hidden="true">
+              <article v-for="placeholder in 3" :key="`mobile-item-skeleton-${placeholder}`" class="item-card">
+                <div class="item-head item-head-skeleton">
+                  <div class="item-main-skeleton">
+                    <BaseSkeleton width="54%" height="18px" />
+                    <BaseSkeleton width="42%" height="12px" />
+                  </div>
+                  <div class="item-actions">
+                    <BaseSkeleton width="52px" height="28px" radius="999px" />
+                    <BaseSkeleton width="52px" height="28px" radius="999px" />
+                  </div>
+                </div>
+                <div class="item-meta-list">
+                  <div class="item-meta-row">
+                    <BaseSkeleton width="22%" height="10px" />
+                    <BaseSkeleton width="94%" height="14px" />
+                  </div>
+                  <div class="item-meta-row">
+                    <BaseSkeleton width="26%" height="10px" />
+                    <BaseSkeleton width="62%" height="14px" />
+                  </div>
+                  <div class="item-meta-row">
+                    <BaseSkeleton width="26%" height="10px" />
+                    <BaseSkeleton width="62%" height="14px" />
+                  </div>
+                </div>
+              </article>
             </div>
+            <BaseEmptyState v-else-if="filteredItems.length === 0" text="这个家庭还没有物资，点击上方按钮开始添加。" />
 
-            <dl class="item-meta-list">
-              <div class="item-meta-row">
-                <dt>描述</dt>
-                <dd>{{ item.description || '-' }}</dd>
-              </div>
-              <div class="item-meta-row">
-                <dt>到期时间</dt>
-                <dd>{{ formatDate(item.expiration_date) }}</dd>
-              </div>
-              <div class="item-meta-row">
-                <dt>创建时间</dt>
-                <dd>{{ formatDate(item.created_at) }}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
+            <div v-else class="item-list">
+              <article v-for="item in filteredItems" :key="item.id" class="item-card">
+                <div class="item-head">
+                  <div>
+                    <h3>{{ item.name || '-' }}</h3>
+                    <p>{{ item.location || '-' }}</p>
+                  </div>
+                  <div class="item-actions">
+                    <BaseButton variant="text" @click="openItemModal(item)">编辑</BaseButton>
+                    <BaseButton variant="danger" @click="deleteItem(item)">删除</BaseButton>
+                  </div>
+                </div>
+
+                <dl class="item-meta-list">
+                  <div class="item-meta-row">
+                    <dt>描述</dt>
+                    <dd>{{ item.description || '-' }}</dd>
+                  </div>
+                  <div class="item-meta-row">
+                    <dt>到期时间</dt>
+                    <dd>{{ formatDate(item.expiration_date) }}</dd>
+                  </div>
+                  <div class="item-meta-row">
+                    <dt>创建时间</dt>
+                    <dd>{{ formatDate(item.created_at) }}</dd>
+                  </div>
+                </dl>
+              </article>
+            </div>
+          </div>
+        </transition>
       </section>
     </main>
 
@@ -294,14 +341,15 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { message } from 'ant-design-vue'
 import request from '@/utils/request'
-import familyCover1 from '@/assets/family_1.png'
-import familyCover2 from '@/assets/family_2.png'
-import familyCover3 from '@/assets/family_3.png'
+import familyCover1 from '@/assets/family_1.jpg'
+import familyCover2 from '@/assets/family_2.jpg'
+import familyCover3 from '@/assets/family_3.jpg'
 import BaseConfirmDialog from '@/components/BaseConfirmDialog.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseEmptyState from '@/components/BaseEmptyState.vue'
 import BaseFormField from '@/components/BaseFormField.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import BaseSkeleton from '@/components/BaseSkeleton.vue'
 import MobileTopbar from '@/components/MobileTopbar.vue'
 
 const router = useRouter()
@@ -339,6 +387,21 @@ const removingMember = ref(null)
 const currentUserId = computed(() => store.state.userInfo?.id || '')
 const selectedFamily = computed(() => families.value.find((family) => family.id === selectedFamilyId.value) || null)
 const filteredItems = computed(() => items.value.filter((item) => item.family_id === selectedFamilyId.value))
+const inventoryViewKey = computed(() => {
+  if (!selectedFamily.value) {
+    return 'inventory-none'
+  }
+
+  if (isLoadingItems.value) {
+    return `inventory-${selectedFamily.value.id}-loading`
+  }
+
+  if (filteredItems.value.length === 0) {
+    return `inventory-${selectedFamily.value.id}-empty`
+  }
+
+  return `inventory-${selectedFamily.value.id}-list`
+})
 
 onMounted(async () => {
   document.addEventListener('click', handleDocumentClick)
@@ -829,6 +892,18 @@ function getFamilyCoverStyle(index) {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.back-btn:hover,
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.1);
+}
+
+.back-btn:active,
+.icon-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .mobile-main {
@@ -850,6 +925,7 @@ function getFamilyCoverStyle(index) {
   padding: 18px;
   display: grid;
   gap: 14px;
+  animation: mobile-section-rise-in 0.48s ease both;
 }
 
 .summary-chip {
@@ -895,11 +971,59 @@ function getFamilyCoverStyle(index) {
   padding: 16px;
 }
 
+.content-section:first-of-type {
+  animation: mobile-section-rise-in 0.56s ease both;
+  animation-delay: 0.06s;
+}
+
+.inventory-section {
+  animation: mobile-section-rise-in 0.64s ease both;
+  animation-delay: 0.12s;
+}
+
 .family-list,
 .item-list,
 .member-list {
   display: grid;
   gap: 12px;
+}
+
+.family-card-skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.family-body-skeleton {
+  align-items: center;
+}
+
+.family-skeleton-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.inventory-swap-enter-active,
+.inventory-swap-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.inventory-swap-enter-from,
+.inventory-swap-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@keyframes mobile-section-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .family-card {
@@ -909,7 +1033,7 @@ function getFamilyCoverStyle(index) {
   overflow: visible;
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
 }
 
 .family-card.active {
@@ -924,6 +1048,7 @@ function getFamilyCoverStyle(index) {
   overflow: hidden;
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
+  transition: transform 0.32s ease, filter 0.32s ease;
 }
 
 .family-cover::after {
@@ -956,6 +1081,7 @@ function getFamilyCoverStyle(index) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  transition: transform 0.24s ease;
 }
 
 .family-main {
@@ -992,6 +1118,7 @@ function getFamilyCoverStyle(index) {
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 700;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .badge-owner {
@@ -1013,6 +1140,12 @@ function getFamilyCoverStyle(index) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.menu-trigger:hover {
+  background: rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
 }
 
 .family-menu {
@@ -1031,6 +1164,21 @@ function getFamilyCoverStyle(index) {
   z-index: 40;
 }
 
+.family-card:hover .family-cover {
+  transform: scale(1.018);
+  filter: saturate(1.04);
+}
+
+.family-card:hover .family-body,
+.family-card.active .family-body {
+  transform: translateY(-1px);
+}
+
+.family-card:hover .badge,
+.family-card.active .badge {
+  transform: translateY(-1px);
+}
+
 .family-menu-item {
   width: 100%;
   border: 0;
@@ -1044,6 +1192,18 @@ function getFamilyCoverStyle(index) {
 
 .family-menu-item.danger {
   color: #dc2626;
+}
+
+.family-menu-pop-enter-active,
+.family-menu-pop-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  transform-origin: top right;
+}
+
+.family-menu-pop-enter-from,
+.family-menu-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
 }
 
 .inventory-section {
@@ -1062,6 +1222,15 @@ function getFamilyCoverStyle(index) {
   border-radius: 16px;
   background: #ffffff;
   padding: 14px;
+}
+
+.item-head-skeleton {
+  align-items: center;
+}
+
+.item-main-skeleton {
+  display: grid;
+  gap: 10px;
 }
 
 .item-head {
@@ -1140,6 +1309,26 @@ function getFamilyCoverStyle(index) {
   width: 20px;
   height: 20px;
   display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-btn,
+  .icon-btn,
+  .hero-card,
+  .content-section:first-of-type,
+  .inventory-section,
+  .family-card,
+  .family-cover,
+  .family-body,
+  .badge,
+  .menu-trigger,
+  .inventory-swap-enter-active,
+  .inventory-swap-leave-active,
+  .family-menu-pop-enter-active,
+  .family-menu-pop-leave-active {
+    transition: none;
+    animation: none;
+  }
 }
 
 @media (max-width: 380px) {
