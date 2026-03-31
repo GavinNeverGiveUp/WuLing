@@ -1,39 +1,6 @@
 ﻿<template>
   <div class="settings-page">
-    <aside class="settings-sidebar">
-      <div class="sidebar-top">
-        <router-link class="home-button" to="/" aria-label="返回首页">
-          <img
-            class="icon-img icon-lg"
-            src="https://api.iconify.design/solar/home-smile-bold-duotone.svg?color=%23D4B08C"
-            alt=""
-            aria-hidden="true"
-          >
-        </router-link>
-
-        <nav class="sidebar-nav">
-          <router-link class="nav-icon" to="/home" aria-label="对话">
-            <img class="icon-img" src="https://api.iconify.design/solar/chat-round-line-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </router-link>
-        </nav>
-      </div>
-
-      <div class="sidebar-bottom">
-        <div class="logout-trigger">
-          <button class="logout-btn" type="button" aria-label="退出登录" @click="handleLogout">
-            <img class="icon-img" src="https://api.iconify.design/solar/logout-2-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <span class="logout-tooltip">退出登录</span>
-        </div>
-
-        <div class="settings-trigger">
-          <button class="settings-btn active" type="button" aria-label="设置" aria-current="page">
-            <img class="icon-img" src="https://api.iconify.design/solar/settings-bold.svg?color=%23D4B08C" alt="" aria-hidden="true">
-          </button>
-          <span class="settings-tooltip">设置</span>
-        </div>
-      </div>
-    </aside>
+    <AppSidebar :settings-active="true" @logout="handleLogout" />
 
     <main class="settings-main">
       <header class="settings-header">
@@ -45,11 +12,7 @@
       </header>
 
       <section class="settings-content">
-        <article class="panel profile-panel">
-          <div class="panel-head">
-            <h2>账号信息</h2>
-          </div>
-
+        <BasePanel class="profile-panel" title="账号信息">
           <div class="profile-body">
             <div class="profile-avatar" aria-label="用户头像">
               <img v-if="userProfile.avatar" :src="userProfile.avatar" alt="用户头像">
@@ -71,14 +34,12 @@
               </div>
             </div>
           </div>
-        </article>
+        </BasePanel>
 
-        <article class="panel key-panel">
-          <div class="panel-head">
-            <h2>API Key 管理</h2>
+        <BasePanel class="key-panel" title="API Key 管理">
+          <template #extra>
             <span class="panel-tip">创建、查看与管理你的 Key</span>
-          </div>
-
+          </template>
           <div class="create-row">
             <input
               v-model="newKeyName"
@@ -95,13 +56,9 @@
             <button type="button" @click="copyKey(latestCreatedKey)">复制</button>
           </div>
 
-          <div v-if="isLoadingKeys" class="empty-state">
-            API Key 列表加载中...
-          </div>
+          <BaseEmptyState v-if="isLoadingKeys" text="API Key 列表加载中..." />
 
-          <div v-else-if="apiKeys.length === 0" class="empty-state">
-            还没有 API Key，先创建一个吧。
-          </div>
+          <BaseEmptyState v-else-if="apiKeys.length === 0" text="还没有 API Key，先创建一个吧。" />
 
           <ul v-else class="key-list">
             <li v-for="item in apiKeys" :key="item.id" class="key-item">
@@ -126,7 +83,7 @@
               </div>
             </li>
           </ul>
-        </article>
+        </BasePanel>
       </section>
     </main>
   </div>
@@ -137,7 +94,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { message } from 'ant-design-vue'
+import AppSidebar from '@/components/AppSidebar.vue'
+import BaseEmptyState from '@/components/BaseEmptyState.vue'
 import request from '@/utils/request'
+import BasePanel from '@/components/BasePanel.vue'
 
 const router = useRouter()
 const store = useStore()
@@ -328,6 +288,13 @@ function handleLogout() {
   gap: 24px;
 }
 
+.nav-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav-icon {
   border: 0;
   background: transparent;
@@ -344,6 +311,31 @@ function handleLogout() {
 
 .nav-icon:hover {
   background: rgba(212, 176, 140, 0.08);
+}
+
+.nav-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #f3f4f6;
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+}
+
+.nav-trigger:hover .nav-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 .sidebar-bottom {
@@ -457,27 +449,6 @@ function handleLogout() {
 .settings-content {
   display: grid;
   gap: 18px;
-}
-
-.panel {
-  background: #ffffff;
-  border: 1px solid #f3f4f6;
-  border-radius: 20px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-  padding: 22px;
-}
-
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.panel-head h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #1f2937;
 }
 
 .panel-tip {
@@ -606,16 +577,6 @@ function handleLogout() {
   border-radius: 10px;
   padding: 6px 10px;
   cursor: pointer;
-}
-
-.empty-state {
-  border-radius: 12px;
-  background: #f9fafb;
-  border: 1px solid #f3f4f6;
-  color: #9ca3af;
-  font-size: 13px;
-  text-align: center;
-  padding: 24px;
 }
 
 .key-list {
@@ -776,6 +737,7 @@ function handleLogout() {
     gap: 8px;
   }
 
+  .nav-tooltip,
   .logout-tooltip,
   .settings-tooltip {
     left: auto;
@@ -785,6 +747,7 @@ function handleLogout() {
     transform: translateY(8px);
   }
 
+  .nav-trigger:hover .nav-tooltip,
   .logout-trigger:hover .logout-tooltip,
   .settings-trigger:hover .settings-tooltip {
     transform: translateY(0);

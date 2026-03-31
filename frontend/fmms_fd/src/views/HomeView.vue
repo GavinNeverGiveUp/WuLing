@@ -1,48 +1,6 @@
-<template>
+﻿<template>
   <div class="dashboard-page">
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <router-link class="home-button" to="/" aria-label="返回首页">
-          <img
-            class="icon-img icon-lg"
-            src="https://api.iconify.design/solar/home-smile-bold-duotone.svg?color=%23D4B08C"
-            alt=""
-            aria-hidden="true"
-          >
-        </router-link>
-
-        <nav class="sidebar-nav">
-          <button class="nav-icon active" type="button" aria-label="对话">
-            <img class="icon-img" src="https://api.iconify.design/solar/chat-round-line-bold.svg?color=%23D4B08C" alt="" aria-hidden="true">
-          </button>
-          <!-- <button class="nav-icon" type="button" aria-label="物资">
-            <img class="icon-img" src="https://api.iconify.design/solar/box-minimalistic-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <button class="nav-icon" type="button" aria-label="定位">
-            <img class="icon-img" src="https://api.iconify.design/solar/streets-navigation-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <button class="nav-icon" type="button" aria-label="统计">
-            <img class="icon-img" src="https://api.iconify.design/solar/pie-chart-2-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button> -->
-        </nav>
-      </div>
-
-      <div class="sidebar-bottom">
-        <div class="logout-trigger">
-          <button class="logout-btn" type="button" aria-label="退出登录" @click="handleLogout">
-            <img class="icon-img" src="https://api.iconify.design/solar/logout-2-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <span class="logout-tooltip">退出登录</span>
-        </div>
-
-        <div class="settings-trigger">
-          <button class="settings-btn" type="button" aria-label="设置" @click="goToSettings">
-            <img class="icon-img" src="https://api.iconify.design/solar/settings-bold.svg?color=%239ca3af" alt="" aria-hidden="true">
-          </button>
-          <span class="settings-tooltip">设置</span>
-        </div>
-      </div>
-    </aside>
+    <AppSidebar active-nav="home" @logout="handleLogout" />
 
     <main class="main-wrap">
       <header class="topbar">
@@ -154,6 +112,7 @@ import { marked } from 'marked'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import request from '@/utils/request'
+import AppSidebar from '@/components/AppSidebar.vue'
 import TopbarNoticePanel from '@/components/TopbarNoticePanel.vue'
 
 marked.setOptions({ breaks: true })
@@ -437,10 +396,6 @@ function handleLogout() {
   store.commit('CLEAR_TOKEN')
   router.push('/')
 }
-
-function goToSettings() {
-  router.push('/settings')
-}
 </script>
 
 <style scoped>
@@ -499,6 +454,13 @@ function goToSettings() {
   gap: 24px;
 }
 
+.nav-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav-icon {
   border: 0;
   background: transparent;
@@ -510,6 +472,7 @@ function goToSettings() {
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  text-decoration: none;
 }
 
 .nav-icon.active {
@@ -518,6 +481,31 @@ function goToSettings() {
 
 .nav-icon:hover {
   background: rgba(212, 176, 140, 0.08);
+}
+
+.nav-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #f3f4f6;
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+}
+
+.nav-trigger:hover .nav-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 .sidebar-bottom {
@@ -1057,6 +1045,18 @@ function goToSettings() {
   .sidebar-bottom {
     flex-direction: row;
     gap: 8px;
+  }
+
+  .nav-tooltip {
+    left: auto;
+    right: 0;
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform: translateY(8px);
+  }
+
+  .nav-trigger:hover .nav-tooltip {
+    transform: translateY(0);
   }
 
   .logout-tooltip {

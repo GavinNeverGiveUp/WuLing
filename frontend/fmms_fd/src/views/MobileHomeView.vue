@@ -1,15 +1,15 @@
 <template>
   <div ref="mobileRootRef" class="mobile-chat-page">
-    <header class="mobile-topbar">
-      <div class="title-block">
+    <MobileTopbar>
+      <template #title>
         <h1 class="hello-text">
           <span class="hello-muted">你好，</span>
           <span>{{ userDisplayName }}</span>
         </h1>
         <p class="date-text">今天是 {{ dateLabel }}</p>
-      </div>
+      </template>
 
-      <div class="topbar-right">
+      <template #actions>
         <TopbarNoticePanel
           class="mobile-notice-trigger"
           title="待关注事项"
@@ -31,14 +31,17 @@
           </template>
         </TopbarNoticePanel>
 
+        <button class="icon-btn" type="button" aria-label="管理" @click="goToMgmt">
+          <img class="icon-img" src="https://api.iconify.design/solar/box-minimalistic-bold.svg?color=%236b7280" alt="" aria-hidden="true">
+        </button>
         <button class="icon-btn" type="button" aria-label="设置" @click="goToSettings">
           <img class="icon-img" src="https://api.iconify.design/solar/settings-bold.svg?color=%236b7280" alt="" aria-hidden="true">
         </button>
         <button class="icon-btn" type="button" aria-label="退出登录" @click="handleLogout">
           <img class="icon-img" src="https://api.iconify.design/solar/logout-2-bold.svg?color=%236b7280" alt="" aria-hidden="true">
         </button>
-      </div>
-    </header>
+      </template>
+    </MobileTopbar>
 
     <main ref="messagesHistory" class="messages-scroll" aria-live="polite">
       <div class="system-tip">已开启安全智能对话界面</div>
@@ -96,6 +99,7 @@ import { marked } from 'marked'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import request from '@/utils/request'
+import MobileTopbar from '@/components/MobileTopbar.vue'
 import TopbarNoticePanel from '@/components/TopbarNoticePanel.vue'
 
 marked.setOptions({ breaks: true })
@@ -467,6 +471,10 @@ function handleLogout() {
 function goToSettings() {
   router.push('/settings')
 }
+
+function goToMgmt() {
+  router.push('/m/mgmt')
+}
 </script>
 
 <style scoped>
@@ -486,26 +494,6 @@ function goToSettings() {
   display: flex;
   flex-direction: column;
   font-family: 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-}
-
-.mobile-topbar {
-  position: relative;
-  z-index: 26;
-  overflow: visible;
-  flex-shrink: 0;
-  padding: max(12px, env(safe-area-inset-top)) 12px 10px;
-  border-bottom: 1px solid #eceff3;
-  background: rgba(255, 255, 255, 0.84);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.title-block {
-  min-width: 0;
 }
 
 .hello-text {
@@ -528,12 +516,6 @@ function goToSettings() {
   color: #9ca3af;
   font-size: 12px;
   line-height: 1.25;
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .expire-pill-btn {
@@ -811,10 +793,6 @@ function goToSettings() {
 @media (max-width: 380px) {
   .mobile-chat-page {
     --notice-panel-top: calc(env(safe-area-inset-top, 0px) + 72px);
-  }
-
-  .topbar-right {
-    gap: 6px;
   }
 
   .expire-pill-btn {

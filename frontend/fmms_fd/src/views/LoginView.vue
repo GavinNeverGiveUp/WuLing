@@ -42,15 +42,13 @@
         </div>
 
         <form class="auth-form" @submit.prevent="onSubmit">
-          <label>
-            <span>用户名</span>
+          <BaseFormField label="用户名" variant="auth">
             <input v-model="formState.username" type="text" placeholder="请输入用户名">
-          </label>
+          </BaseFormField>
 
-          <label>
-            <span>访问密码</span>
+          <BaseFormField label="访问密码" variant="auth">
             <input v-model="formState.password" type="password" placeholder="请输入密码">
-          </label>
+          </BaseFormField>
 
           <button class="submit-button" type="submit" :disabled="isLoading">
             {{ isLoading ? '登录中...' : '登录物灵' }}
@@ -71,6 +69,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { message } from 'ant-design-vue'
+import BaseFormField from '@/components/BaseFormField.vue'
 import request from '@/utils/request'
 
 const router = useRouter()
@@ -280,18 +279,7 @@ async function onSubmit() {
   gap: 16px;
 }
 
-.auth-form label {
-  display: grid;
-  gap: 8px;
-}
-
-.auth-form span {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #6c5f56;
-}
-
-.auth-form input {
+.auth-form :deep(input) {
   width: 100%;
   font-family: inherit;
   padding: 1rem 1.1rem;
@@ -302,7 +290,7 @@ async function onSubmit() {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.auth-form input:focus {
+.auth-form :deep(input:focus) {
   border-color: rgba(171, 127, 91, 0.42);
   box-shadow: 0 0 0 4px rgba(212, 176, 140, 0.14);
 }
